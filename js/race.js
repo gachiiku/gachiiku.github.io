@@ -86,6 +86,17 @@ window.WAKE_READY.then((first) => {
     return `${t.getFullYear()}${pad(t.getMonth() + 1)}${pad(t.getDate())}`;
   }
 
+  // ---------- モーター評価（admin.html で入力 → data/motor_eval.json） ----------
+  const MEV_AXES = [['nobi', '伸び足'], ['iki', '行き足'], ['de', '出足']];
+  let mev = {};
+  const loadMev = () => fetch('data/motor_eval.json', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : {})).then((d) => { mev = d.motors || {}; }).catch(() => {});
+  const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  function mevCell(jcd, motorNo, k) {
+    const e = mev[`${jcd}-${motorNo}`];
+    const g = e && e[k];
+    return g ? `<span class="mgrade mgrade--${g}">${g}</span>` : '<small>未評価</small>';
+  }
+
   // ---------- 本体 ----------
   let seq = 0;
   async function render() {
@@ -96,7 +107,7 @@ window.WAKE_READY.then((first) => {
     syncUrl();
     renderNav(v, r);
     const my = ++seq;
-    const data = await Promise.all(r.boats.map((b) => racer(b.no)));
+    const [data] = await Promise.all([Promise.all(r.boats.map((b) => racer(b.no))), loadMev()]);
     if (my !== seq) return; // 途中で別のレースに切り替わった
     const boats = r.boats.map((b, i) => ({ b, s: data[i][0], p: data[i][1] }));
     $('#rc-body').innerHTML = renderBody(v, r, boats);
@@ -188,6 +199,9 @@ window.WAKE_READY.then((first) => {
         ${row('全国<br><small>勝率 / 2連率</small>', ({ b }) => `${num(b.nat, f2, bestNat)}<small>${f1(b.nat2)}%</small>`)}
         ${row('当地<br><small>勝率 / 2連率</small>', ({ b }) => (b.local ? `${num(b.local, f2, bestLoc)}<small>${f1(b.local2)}%</small>` : '—'))}
         ${row('モーター<br><small>No / 2連率</small>', ({ b }) => `<small>#${b.motorNo}</small>${num(b.motor2, f1, bestMot)}`)}
+        ${sec('モーター評価', 'WAKE独自の評価')}
+        ${MEV_AXES.map(([k, l]) => row(l, ({ b }) => mevCell(v.id, b.motorNo, k))).join('')}
+        ${boats.some(({ b }) => (mev[`${v.id}-${b.motorNo}`] || {}).memo) ? row('メモ', ({ b }) => `<span class="mev-memo">${esc((mev[`${v.id}-${b.motorNo}`] || {}).memo || '')}</span>`, 'is-memo') : ''}
         ${row('ボート<br><small>No / 2連率</small>', ({ b }) => `<small>#${b.boatNo}</small>${f1(b.boat2)}`)}
         ${row('展示<br><small>タイム / チルト</small>', ({ b }) => (b.exTime ? `${num(b.exTime, f2, bestEx)}<small>${b.tilt ?? ''}</small>` : '—'))}
         ${sec('勝ち筋・負け筋', '直近1年・枠なり進入のとき')}
@@ -209,22 +223,9 @@ window.WAKE_READY.then((first) => {
         ${isToday ? row('早見', ({ b }) => v.races.filter((x) => x.no !== r.no && !x.result && x.boats.some((y) => y.no === b.no)).map((x) => `<a href="?j=${v.id}&r=${x.no}">${x.no}R</a>`).join(' ') || '—', 'rc-hayami') : ''}
       </tbody></table></div>`;
 
-    // 予想指数
-    const ranked = [...r.boats].sort((a, b) => b.index - a.index);
-    const maxIdx = ranked[0].index;
-    const mark = ['◎', '○', '▲', '△'];
-    const pred = `<div class="card card--pred"><h4 class="card__h">予想指数</h4>
-      <ol class="pred">${ranked.map((b, i) => `<li>
-        <span class="pred__m">${mark[i] || ''}</span><span class="ln ln-${b.lane}">${b.lane}</span>
-        <span class="pred__n">${b.name}</span>
-        <div class="bar bar--idx"><i style="--w:${(b.index / maxIdx) * 100}%"></i></div><b>${b.index.toFixed(1)}</b></li>`).join('')}</ol>
-      <p class="pred__buy">推奨買い目 <b>${ranked[0].lane}-${ranked[1].lane}-${ranked[2].lane}</b> / ${ranked[0].lane}-${ranked[2].lane}-${ranked[1].lane} / ${ranked[0].lane}-${ranked[1].lane}-${ranked[3].lane}</p>
-      <p class="pred__note">枠の有利さ・全国勝率・モーター・平均ST・展示タイムから算出した参考値です</p></div>`;
-
     const hasStats = boats.some((x) => x.s);
     return cond + result + table
-      + `<p class="rc-note">赤字はそのレースの6艇で一番良い数字。コース別データは各選手が枠番どおりのコースに入ったときの成績です${hasStats ? `（集計 ${boats.find((x) => x.s).s.histSpan.map((d) => `${d.slice(0, 4)}/${+d.slice(4, 6)}/${+d.slice(6)}`).join('〜')}）` : ''}。</p>`
-      + pred;
+      + `<p class="rc-note">赤字はそのレースの6艇で一番良い数字。コース別データは各選手が枠番どおりのコースに入ったときの成績です${hasStats ? `（集計 ${boats.find((x) => x.s).s.histSpan.map((d) => `${d.slice(0, 4)}/${+d.slice(4, 6)}/${+d.slice(6)}`).join('〜')}）` : ''}。</p>`;
   }
 
   // ---------- 操作 ----------

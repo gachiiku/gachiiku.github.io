@@ -79,7 +79,7 @@ jobs:
       - name: 公開用ファイルをまとめる
         run: |
           mkdir -p _site
-          cp -r index.html players.html race.html css js data _site/
+          cp -r index.html players.html race.html admin.html css js data _site/
           rm -rf _site/data/hist
           rm -f _site/data/.fetch.lock
 

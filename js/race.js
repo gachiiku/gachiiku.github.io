@@ -177,11 +177,6 @@ window.WAKE_READY.then((first) => {
       const lose = (x.b.lane === 1 && i > 0) || (x.b.lane > 1 && i === 0);
       return `<td class="${lose ? 'k-lose-c' : 'k-gain-c'}">${k && k[0] ? `<small>${x.b.lane === 1 ? l1 : l2}</small><b>${f1(k[i + 1])}</b>` : '—'}</td>`;
     }).join('')}</tr>`).join('')
-      + `<tr><th>主な負け方</th>${boats.map((x) => {
-        const L = x.s && x.s.lose1y ? x.s.lose1y[x.b.lane - 1] : null;
-        if (!L || !L.n) return '<td>—</td>';
-        return `<td class="rc-lose">${L.by.slice(0, 2).map(([c, k, n]) => `<span><i class="ln ln-${c}">${c}</i>${KS[k] || k}<b>${(n / L.n * 100).toFixed(0)}%</b></span>`).join('') || '<small>負けなし</small>'}</td>`;
-      }).join('')}</tr>`;
 
     const table = `<div class="rc-scroll"><table class="rc-tbl">
       <thead><tr><th>枠</th>${boats.map(({ b }) => `<th><span class="ln ln-${b.lane}">${b.lane}</span></th>`).join('')}</tr></thead>

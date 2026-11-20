@@ -1,0 +1,41 @@
+# 10分おきのデータ取得（8:00〜23:59 日本時間）
+#   1回の実行で約5時間40分ループし、終わる前に次の実行を自分で起動する。
+#   時刻指定（schedule）は、ループが止まっていたときの再開用の予備。
+name: 自動取得（10分おき）
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 */4 * * *'
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: loop
+  cancel-in-progress: false
+
+jobs:
+  loop:
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    env:
+      TZ: Asia/Tokyo
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 展開ツール
+        run: sudo apt-get install -y -qq libarchive-tools
+
+      - name: 10分おきに取得して公開
+        run: bash scripts/ci_loop.sh
+
+      - name: 次のループを起動
+        if: always()
+        run: gh workflow run loop.yml --ref main

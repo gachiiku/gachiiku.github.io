@@ -1,17 +1,15 @@
-# 公式サイトからデータを取得し、GitHub Pages に公開する。
-#   ・8:00〜23:59（日本時間）の間、10分おきに自動実行
-#   ・コードを push したときと、手動実行（Actions 画面の Run workflow）でも動く
+# サイトを GitHub Pages に公開する。
+#   ・データの取得は loop.yml（10分おき）が行い、取得のたびにこれを起動する
+#   ・コードを push したときと、手動実行でも動く
 name: データ更新と公開
 
 on:
-  schedule:
-    - cron: '*/10 23,0-14 * * *'   # UTC表記。日本時間 8:00〜23:59
   push:
     branches: [main]
   workflow_dispatch:
 
 permissions:
-  contents: write   # 取得したデータを main に保存する
+  contents: read
   pages: write
   id-token: write
 
@@ -35,18 +33,6 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: データ取得（その日の初回は全件、以降は結果・直前情報だけ）
-        if: github.event_name != 'push'
-        run: python -u scripts/fetch_today.py
-
-      - name: 過去のレース結果を追加（前日分）
-        if: github.event_name != 'push'
-        run: |
-          Y=$(date -d yesterday +%Y); D=$(date -d yesterday +%Y%m%d)
-          if [ -f "data/hist/$Y/$D.json.gz" ]; then echo '前日分は取得済み'; exit 0; fi
-          command -v bsdtar || sudo apt-get install -y -qq libarchive-tools
-          python -u scripts/fetch_history.py
-
       - name: 選手データの鍵（過去データの最終日＋今日）
         id: key
         run: echo "key=racers-$(ls data/hist/*/*.json.gz | sort | tail -1 | xargs basename | cut -c1-8)-$(ls data/hist/*/* | wc -l | tr -d " ")-$(date +%Y%m%d)" >> "$GITHUB_OUTPUT"
@@ -64,17 +50,6 @@ jobs:
           command -v bsdtar || sudo apt-get install -y -qq libarchive-tools
           python -u scripts/fetch_racers.py
           python -u scripts/build_stats.py
-
-      - name: 取得したデータを保存
-        if: github.event_name != 'push'
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data
-          if git diff --cached --quiet; then echo '変更なし'; exit 0; fi
-          git commit -m "data: $(date '+%Y-%m-%d %H:%M')"
-          git pull --rebase -X theirs origin main
-          git push
 
       - name: 公開用ファイルをまとめる
         run: |

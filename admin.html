@@ -64,14 +64,23 @@
     <p class="ad__lead">伸び足・行き足・出足を 1〜5 の数字で付けて「保存」すると、1〜3分でサイトのレースページに反映されます。評価は「場 × モーター番号」ごとに保存され、そのモーターが出るすべてのレースに表示されます。</p>
 
     <section class="ad-box" id="tokbox">
-      <h2>① 合言葉</h2>
+      <h2>① 書き込み用の鍵（最初の1回だけ）</h2>
       <div class="ad-row">
-        <input type="password" id="tok" placeholder="管理者から聞いた合言葉" autocomplete="off">
-        <button class="btn btn--fill" id="tok-save">確認</button>
+        <input type="password" id="tok" placeholder="github_pat_ から始まる鍵を貼り付け" autocomplete="off">
+        <button class="btn btn--fill" id="tok-save">確認して保存</button>
         <button class="btn" id="tok-clear">この端末から消す</button>
       </div>
       <p class="ad-msg" id="tok-msg"></p>
-      <p class="ad-help">一度確認すると、この端末では次から入力不要です。GitHub や Google へのログインはいりません。</p>
+      <div class="ad-help">
+        鍵はこの端末のブラウザの中だけに保存され、サイトには公開されません。作り方：
+        <ol>
+          <li>GitHub にログインして <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Fine-grained token の作成ページ</a> を開く</li>
+          <li>Token name に「WAKE モーター評価」、Expiration は好きな期限</li>
+          <li>Repository access で「Only select repositories」→ <b>wake</b> を選ぶ</li>
+          <li>Permissions → Repository permissions → <b>Contents</b> を「Read and write」にする</li>
+          <li>「Generate token」で出てきた鍵をコピーして、上の欄に貼り付ける</li>
+        </ol>
+      </div>
     </section>
 
     <section class="ad-box">
@@ -99,9 +108,9 @@
 
   <script>
   (() => {
-    // 受け付け窓口（Cloudflare Workers の URL）。worker/motor.js を公開して得た URL を入れる
-    const ENDPOINT = '';
+    const REPO = 'harutos7428-alt/wake';
     const PATH = 'data/motor_eval.json';
+    const API = `https://api.github.com/repos/${REPO}/contents/${PATH}`;
     const GRADES = ['1', '2', '3', '4', '5'];
     // 総合: 3項目の平均 → S/A/B/C/E（レースページと同じ計算）
     function total(e) {
@@ -116,9 +125,9 @@
     const $ = (s) => document.querySelector(s);
     const esc = (t) => String(t ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
     const store = {
-      get: () => { try { return localStorage.getItem('wake_pass') || ''; } catch (e) { return ''; } },
-      set: (v) => { try { localStorage.setItem('wake_pass', v); } catch (e) {} },
-      del: () => { try { localStorage.removeItem('wake_pass'); } catch (e) {} },
+      get: () => { try { return localStorage.getItem('wake_gh_token') || ''; } catch (e) { return ''; } },
+      set: (v) => { try { localStorage.setItem('wake_gh_token', v); } catch (e) {} },
+      del: () => { try { localStorage.removeItem('wake_gh_token'); } catch (e) {} },
     };
 
     let today = null;      // data/today.json
@@ -126,14 +135,30 @@
     let draft = {};        // 編集中
     let extra = {};        // 番号指定で追加したモーター { jcd: [no] }
 
-    async function loadSaved() {
-      const r = await fetch(`${PATH}?t=${Date.now()}`, { cache: 'no-store' });
-      return r.ok ? await r.json() : { motors: {} };
+    // UTF-8 ⇔ base64
+    const b64enc = (str) => { const b = new TextEncoder().encode(str); let s = ''; b.forEach((x) => { s += String.fromCharCode(x); }); return btoa(s); };
+    const b64dec = (b64) => new TextDecoder().decode(Uint8Array.from(atob(b64.replace(/\n/g, '')), (c) => c.charCodeAt(0)));
+
+    async function gh(method, body) {
+      const tok = store.get();
+      const res = await fetch(API + (method === 'GET' ? `?ref=main&t=${Date.now()}` : ''), {
+        method,
+        headers: { Accept: 'application/vnd.github+json', ...(tok ? { Authorization: `Bearer ${tok}` } : {}), ...(body ? { 'Content-Type': 'application/json' } : {}) },
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      return res;
     }
-    async function checkPass(pass) {
-      if (!ENDPOINT) throw new Error('受け付け窓口がまだ設定されていません');
-      const r = await fetch(`${ENDPOINT}?pass=${encodeURIComponent(pass)}`);
-      return (await r.json()).ok === true;
+    async function loadSaved() {
+      // GitHub の最新を読む（鍵がなければ公開中のファイル）
+      if (store.get()) {
+        const res = await gh('GET');
+        if (res.status === 404) return { motors: {}, sha: null };
+        if (!res.ok) throw new Error(`GitHubから読めませんでした（${res.status}）`);
+        const j = await res.json();
+        return { ...JSON.parse(b64dec(j.content)), sha: j.sha };
+      }
+      const r = await fetch(`${PATH}?t=${Date.now()}`);
+      return r.ok ? { ...(await r.json()), sha: null } : { motors: {}, sha: null };
     }
 
     function venueMotors(jcd) {
@@ -170,7 +195,7 @@
     function updateBar() {
       const n = Object.keys(draft).length;
       $('#save').disabled = !n || !store.get();
-      $('#status').textContent = !store.get() ? '① の合言葉を確認すると、評価を保存できます'
+      $('#status').textContent = !store.get() ? '① の鍵を保存すると、評価を保存できます'
         : n ? `${n}件の変更があります（まだ保存していません）` : `保存済みの評価 ${Object.keys(saved).length}件`;
     }
     function edit(key, fn) {
@@ -207,35 +232,44 @@
     $('#tok-save').addEventListener('click', async () => {
       const t = $('#tok').value.trim();
       if (!t) return;
+      store.set(t);
       $('#tok-msg').className = 'ad-msg'; $('#tok-msg').textContent = '確認中…';
-      try {
-        if (await checkPass(t)) {
-          store.set(t);
-          $('#tok').value = '';
-          $('#tok-msg').className = 'ad-msg is-ok'; $('#tok-msg').textContent = '合言葉を確認しました。評価を保存できます。';
-        } else {
-          store.del();
-          $('#tok-msg').className = 'ad-msg is-ng'; $('#tok-msg').textContent = '合言葉が違います。';
-        }
-      } catch (err) {
-        $('#tok-msg').className = 'ad-msg is-ng'; $('#tok-msg').textContent = err.message;
+      const res = await fetch(`https://api.github.com/repos/${REPO}`, { headers: { Authorization: `Bearer ${t}`, Accept: 'application/vnd.github+json' } });
+      const j = res.ok ? await res.json() : null;
+      if (j && j.permissions && j.permissions.push) {
+        $('#tok-msg').className = 'ad-msg is-ok'; $('#tok-msg').textContent = '鍵を確認しました。この端末で評価を保存できます。';
+        $('#tok').value = '';
+        await reload();
+      } else {
+        store.del();
+        $('#tok-msg').className = 'ad-msg is-ng'; $('#tok-msg').textContent = '書き込みできる鍵ではありませんでした。手順の「Contents: Read and write」と対象の「wake」を確認してください。';
       }
       updateBar();
     });
-    $('#tok-clear').addEventListener('click', () => { store.del(); $('#tok-msg').textContent = 'この端末から合言葉を消しました。'; updateBar(); });
+    $('#tok-clear').addEventListener('click', () => { store.del(); $('#tok-msg').textContent = 'この端末から鍵を消しました。'; updateBar(); });
 
     $('#save').addEventListener('click', async () => {
       $('#save').disabled = true;
       $('#status').textContent = '保存中…';
       try {
-        if (!ENDPOINT) throw new Error('受け付け窓口がまだ設定されていません');
-        // text/plain で送ると、ブラウザの事前確認なしで窓口に届く
-        const res = await fetch(ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ pass: store.get(), changes: draft }) });
-        const j = await res.json();
-        if (!j.ok) throw new Error(j.error || '保存できませんでした');
-        saved = j.motors || saved; draft = {};
+        // 保存直前に最新を読み直して、自分の変更だけを重ねる
+        const latest = await loadSaved();
+        const motors = { ...(latest.motors || {}) };
+        const now = new Date();
+        const at = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        Object.entries(draft).forEach(([key, e]) => {
+          const n = (x) => (+x >= 1 && +x <= 5 ? +x : 0);
+          const clean = { nobi: n(e.nobi), iki: n(e.iki), de: n(e.de), memo: e.memo || '', at };
+          if (!clean.nobi && !clean.iki && !clean.de && !clean.memo) delete motors[key];
+          else motors[key] = clean;
+        });
+        const body = JSON.stringify({ updatedAt: at, motors }, null, 1) + '\n';
+        const names = [...new Set(Object.keys(draft).map((k) => VENUES[+k.split('-')[0]]))].join('・');
+        const res = await gh('PUT', { message: `モーター評価を更新（${names} ${Object.keys(draft).length}件）`, content: b64enc(body), sha: latest.sha || undefined, branch: 'main' });
+        if (!res.ok) throw new Error(`保存できませんでした（${res.status}）`);
+        saved = motors; draft = {};
         render();
-        $('#status').textContent = `保存しました（${j.at}）。1〜2分でサイトに反映されます。`;
+        $('#status').textContent = `保存しました（${at}）。1〜3分でサイトに反映されます。`;
       } catch (err) {
         $('#status').textContent = err.message;
         updateBar();
@@ -243,7 +277,7 @@
     });
 
     async function reload() {
-      const s = await loadSaved().catch(() => ({ motors: {} }));
+      const s = await loadSaved().catch((e) => { $('#status').textContent = e.message; return { motors: {} }; });
       saved = s.motors || {};
       render();
     }
@@ -254,7 +288,7 @@
       const rest = VENUES.map((n, i) => ({ id: i, name: n })).filter((v) => v.id && !open.find((o) => o.id === v.id));
       $('#venue').innerHTML = `<optgroup label="今日開催">${open.map((v) => `<option value="${v.id}">${v.name}</option>`).join('')}</optgroup>`
         + `<optgroup label="そのほかの場">${rest.map((v) => `<option value="${v.id}">${v.name}</option>`).join('')}</optgroup>`;
-      if (store.get()) $('#tok-msg').textContent = 'この端末では合言葉を確認済みです。';
+      if (store.get()) $('#tok-msg').textContent = 'この端末には鍵が保存されています。';
       await reload();
     })();
   })();

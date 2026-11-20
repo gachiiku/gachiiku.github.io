@@ -107,6 +107,11 @@ window.WAKE_READY.then((first) => {
     return `<span class="mgrade mgrade--${g}">${g}</span>`;
   }
 
+  // ---------- モーター機歴（data/motors） ----------
+  const motorSum = {};
+  const loadMotors = (j) => (motorSum[j] ? Promise.resolve() : getJSON(`data/motors/${j}.json`).then((d) => { motorSum[j] = d || { motors: {} }; }));
+  const mstat = (j, m) => ((motorSum[j] || {}).motors || {})[m] || null;
+
   // ---------- 本体 ----------
   let seq = 0;
   async function render() {
@@ -117,7 +122,7 @@ window.WAKE_READY.then((first) => {
     syncUrl();
     renderNav(v, r);
     const my = ++seq;
-    const [data] = await Promise.all([Promise.all(r.boats.map((b) => racer(b.no))), loadMev()]);
+    const [data] = await Promise.all([Promise.all(r.boats.map((b) => racer(b.no))), loadMev(), loadMotors(v.id)]);
     if (my !== seq) return; // 途中で別のレースに切り替わった
     const boats = r.boats.map((b, i) => ({ b, s: data[i][0], p: data[i][1] }));
     $('#rc-body').innerHTML = renderBody(v, r, boats);
@@ -136,7 +141,8 @@ window.WAKE_READY.then((first) => {
       ? '<div class="result result--cancel"><span class="result__l">レース中止</span><span class="result__note">舟券は返還されます</span></div>'
       : r.result ? `<div class="result"><span class="result__l">結果</span>
         <div class="result__o">${r.result.order.map((l) => `<span class="ln ln-${l}">${l}</span>`).join('<i>-</i>')}</div>
-        <span class="result__p ${r.result.payout >= 10000 ? 'is-man' : ''}">3連単 ${yen(r.result.payout)}</span></div>` : '';
+        <span class="result__p ${r.result.payout >= 10000 ? 'is-man' : ''}">3連単 ${yen(r.result.payout)}</span>
+        <button class="vbtn" data-video="${v.id}-${date}-${r.no}">▶ レース映像</button></div>` : '';
 
     const col = (fn, cls = '') => boats.map((x) => `<td class="${cls}">${fn(x)}</td>`).join('');
     const sec = (title, note) => `<tr class="rc-sec"><th colspan="7">${title}${note ? `<small>${note}</small>` : ''}</th></tr>`;
@@ -209,6 +215,13 @@ window.WAKE_READY.then((first) => {
         ${row('全国<br><small>勝率 / 2連率</small>', ({ b }) => `${num(b.nat, f2, bestNat)}<small>${f1(b.nat2)}%</small>`)}
         ${row('当地<br><small>勝率 / 2連率</small>', ({ b }) => (b.local ? `${num(b.local, f2, bestLoc)}<small>${f1(b.local2)}%</small>` : '—'))}
         ${row('モーター<br><small>No / 2連率</small>', ({ b }) => `<small>#${b.motorNo}</small>${num(b.motor2, f1, bestMot)}`)}
+        ${sec('モーター機歴', motorSum[v.id] && motorSum[v.id].start ? `${+motorSum[v.id].start.slice(4, 6)}/${+motorSum[v.id].start.slice(6)}の使用開始から` : '使用開始から')}
+        ${row('ランク<br><small>2連率順</small>', ({ b }) => { const s = mstat(v.id, b.motorNo); return s && s.all.n ? `<b>${s.all.rank}</b><small>/ ${motorSum[v.id].count}機</small>` : '—'; })}
+        ${row('2連率<br><small>出走数</small>', ({ b }) => { const s = mstat(v.id, b.motorNo); return s && s.all.n ? `${num(s.all.r2, f1, best(boats.map((x) => (mstat(v.id, x.b.motorNo) || { all: {} }).all.r2)))}<small>${s.all.n}走</small>` : '—'; })}
+        ${row('直近1ヶ月<br><small>2連率</small>', ({ b }) => { const s = mstat(v.id, b.motorNo); return s && s.m1.n ? `${f1(s.m1.r2)}<small>${s.m1.n}走</small>` : '—'; })}
+        ${row('貢献P', ({ b }) => { const s = mstat(v.id, b.motorNo); return s && s.all.kp != null ? `<b class="${s.all.kp > 0 ? 'is-plus' : 'is-minus'}">${s.all.kp > 0 ? '+' : ''}${s.all.kp.toFixed(2)}</b>` : '—'; })}
+        ${row('展示順位<br><small>平均</small>', ({ b }) => { const s = mstat(v.id, b.motorNo); return s && s.all.exRank ? f2(s.all.exRank) : '—'; })}
+        ${row('履歴', ({ b }) => `<a class="mbtn" href="#m/${b.motorNo}">#${b.motorNo} 履歴</a>`)}
         ${sec('モーター評価', 'WAKE独自の評価')}
         ${row('総合', ({ b }) => mevTotal(v.id, b.motorNo))}
         ${MEV_AXES.map(([k, l]) => row(`${l}<br><small>5点満点</small>`, ({ b }) => mevCell(v.id, b.motorNo, k))).join('')}
@@ -239,6 +252,78 @@ window.WAKE_READY.then((first) => {
       + `<p class="rc-note">赤字はそのレースの6艇で一番良い数字。コース別データは各選手が枠番どおりのコースに入ったときの成績です${hasStats ? `（集計 ${boats.find((x) => x.s).s.histSpan.map((d) => `${d.slice(0, 4)}/${+d.slice(4, 6)}/${+d.slice(6)}`).join('〜')}）` : ''}。</p>`;
   }
 
+  // ---------- モーター機歴ページ（#m/番号） ----------
+  const VN = ['', '桐生', '戸田', '江戸川', '平和島', '多摩川', '浜名湖', '蒲郡', '常滑', '津', '三国', 'びわこ', '住之江',
+    '尼崎', '鳴門', '丸亀', '児島', '宮島', '徳山', '下関', '若松', '芦屋', '福岡', '唐津', '大村'];
+  const mo = document.createElement('div');
+  mo.className = 'racer';
+  mo.id = 'motor';
+  mo.setAttribute('aria-hidden', 'true');
+  mo.innerHTML = `<div class="racer__panel" role="dialog" aria-modal="true" aria-labelledby="mo-title">
+    <header class="racer__head"><button class="racer__back" data-mclose>‹ 戻る</button>
+      <div><p class="drawer__meta" id="mo-meta"></p><h3 class="racer__title" id="mo-title"></h3></div></header>
+    <div class="racer__body" id="mo-body"></div></div>`;
+  document.body.appendChild(mo);
+  let moIn = false;
+  async function openMotor(m) {
+    mo.classList.add('is-open'); mo.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    $('#mo-title').textContent = `${VN[jcd]} ${m}号機`;
+    $('#mo-meta').textContent = 'モーター機歴';
+    $('#mo-body').innerHTML = '<p class="empty">読み込み中…</p>';
+    const d = await getJSON(`data/motors/${jcd}/${m}.json`);
+    if (!d) { $('#mo-body').innerHTML = '<p class="empty">このモーターの機歴はまだありません。</p>'; return; }
+    $('#mo-body').innerHTML = motorBody(d);
+    $('#mo-body').scrollTop = 0;
+  }
+  function closeMotor() {
+    mo.classList.remove('is-open'); mo.setAttribute('aria-hidden', 'true');
+    if (!document.querySelector('#racer.is-open')) document.body.style.overflow = '';
+  }
+  const ymdS = (x) => `${x.slice(0, 4)}/${+x.slice(4, 6)}/${+x.slice(6, 8)}`;
+  const posS = (p) => (typeof p === 'number' ? p : String(p || '—').replace(/\d/, ''));
+  function motorBody(d) {
+    const A = d.summary.all, M1 = d.summary.m1;
+    const e = mev[`${d.jcd}-${d.motor}`];
+    const card = (t, a) => `<div class="mo-sum"><h5>${t}</h5><dl>
+      <div><dt>ランク</dt><dd>${a.rank ? `${a.rank}<small>位</small>` : '—'}</dd></div>
+      <div><dt>2連率</dt><dd>${f1(a.r2)}<small>%</small></dd></div>
+      <div><dt>3連率</dt><dd>${f1(a.r3)}<small>%</small></dd></div>
+      <div><dt>1着率</dt><dd>${f1(a.r1)}<small>%</small></dd></div>
+      <div><dt>勝率</dt><dd>${f2(a.win)}</dd></div>
+      <div><dt>貢献P</dt><dd class="${a.kp > 0 ? 'is-plus' : 'is-minus'}">${a.kp == null ? '—' : (a.kp > 0 ? '+' : '') + a.kp.toFixed(2)}</dd></div>
+      <div><dt>展示順位</dt><dd>${f2(a.exRank)}</dd></div>
+      <div><dt>出走</dt><dd>${a.n}<small>走</small></dd></div>
+      <div><dt>優出 / 優勝</dt><dd>${a.finals} / ${a.champs}</dd></div></dl></div>`;
+    const evalHtml = e ? `<div class="mo-eval"><b>WAKE評価</b>${MEV_AXES.map(([k, l]) => `<span>${l} <b>${e[k] || '—'}</b></span>`).join('')}<span>総合 ${mevTotal(d.jcd, d.motor)}</span>${e.memo ? `<em>${esc(e.memo)}</em>` : ''}</div>` : '';
+    const ser = d.series.map((s) => `<div class="card mo-ser">
+      <h4 class="card__h"><span class="tag tag--g ${s.grade === 'SG' || s.grade === 'G1' ? 'is-big' : ''}">${s.grade}</span>${s.title}
+        <small>${+s.from.slice(4, 6)}/${+s.from.slice(6)}〜${+s.to.slice(4, 6)}/${+s.to.slice(6)}</small></h4>
+      <p class="mo-who"><a href="players.html#r/${s.no}">${s.name || s.no}</a> <small>${s.no}${s.cls ? '・' + s.cls : ''}</small></p>
+      <div class="rp-tbl-wrap"><table class="rp-tbl mo-tbl"><thead><tr><th>日付</th><th>R</th><th>レース</th><th>枠</th><th>進入</th><th>ST</th><th>展示</th><th>着</th><th>映像</th></tr></thead>
+      <tbody>${s.runs.map(([dt, rr, nm, ln, c, st, pos, ex, exr]) => `<tr class="${pos === 1 ? 'is-win' : ''}">
+        <td>${+dt.slice(4, 6)}/${+dt.slice(6)}</td><td>${rr}R</td><td class="mo-rn">${nm}</td>
+        <td><span class="ln ln-${ln}">${ln}</span></td><td>${c || '—'}</td>
+        <td>${st == null ? '—' : st < 0 ? 'F' + st2(-st) : st2(st)}</td>
+        <td>${ex ? ex.toFixed(2) : '—'}<small>${exr ? exr + '位' : ''}</small></td>
+        <td><b>${posS(pos)}</b></td>
+        <td><button class="vbtn vbtn--sm" data-video="${d.jcd}-${dt}-${rr}" aria-label="映像">▶</button></td></tr>`).join('')}</tbody></table></div></div>`).join('');
+    return `${evalHtml}<p class="rp-span">使用開始 ${ymdS(d.start)} 〜 ${ymdS(d.last)} の全出走（${d.series.length}節）。貢献P＝そのモーターで取った得点と、乗った選手のふだんの勝率との差（プラスほど選手の実力以上に走っている）。</p>
+      <div class="mo-sums">${card('使用開始から', A)}${card('直近1ヶ月', M1)}</div>${ser || '<p class="empty">出走記録がありません</p>'}`;
+  }
+  function routeMotor() {
+    const m = location.hash.match(/^#m\/(\d{1,3})$/);
+    if (m) openMotor(+m[1]);
+    else if (mo.classList.contains('is-open')) closeMotor();
+  }
+  window.addEventListener('hashchange', () => { moIn = /^#m\//.test(location.hash) || moIn; routeMotor(); });
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('[data-mclose]')) return;
+    if (moIn) history.back();
+    else { history.replaceState(null, '', location.pathname + location.search); closeMotor(); }
+    moIn = false;
+  });
+
   // ---------- 操作 ----------
   document.addEventListener('click', (e) => {
     const a = e.target.closest('#rc-tabs a, #rc-venues a, .rc-hayami a');
@@ -251,7 +336,7 @@ window.WAKE_READY.then((first) => {
     window.scrollTo({ top: 0 });
   });
 
-  render();
+  render().then(routeMotor);
   setInterval(tick, 1000);
 
   // 今日のレースは30秒ごとに結果・展示を取り直す

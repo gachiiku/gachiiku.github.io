@@ -8,9 +8,11 @@
   ・グレード（SG/G1/G2/G3/一般）は公式サイトの開催一覧 index?hd= から
 
 出力: data/hist/YYYY/YYYYMMDD.json.gz （一度作った日は作り直さない）
+  各出走 e = [登番, 艇番, 進入, ST, 着順, モーター, ボート, 展示タイム]
 
   python3 scripts/fetch_history.py                 # 保存済みの翌日〜昨日
   python3 scripts/fetch_history.py --since 20211120 # 指定日〜昨日で、まだ無い日を全部
+  python3 scripts/fetch_history.py --refresh 20251126 # 指定日〜昨日で、モーター番号の無い日を取り直す
 """
 import gzip
 import json
@@ -115,28 +117,47 @@ def parse_k(txt):
         if m and race is not None:
             pos_s, lane, no, rest = m.groups()
             t = TAIL.search(rest)
-            course = st = None
+            course = st = motor = boat = ex = None
             if t:
+                motor, boat = int(t.group(1)), int(t.group(2))
+                ex = float(t.group(3)) if re.fullmatch(r'\d\.\d\d', t.group(3)) else None
                 course = int(t.group(4)) if t.group(4).isdigit() else None
                 st = to_st(t.group(5))
             pos = int(pos_s) if pos_s.isdigit() else pos_s  # F/L/K/S は文字のまま
-            race['e'].append([int(no), int(lane), course, st, pos])
+            race['e'].append([int(no), int(lane), course, st, pos, motor, boat, ex])
     return [v for v in venues if v['races']]
 
 
-def fetch_day(d):
+def has_motor(p):
+    try:
+        d = json.load(gzip.open(p, 'rt', encoding='utf-8'))
+        e = d['venues'][0]['races'][0]['e'][0]
+        return len(e) >= 8
+    except Exception:
+        return False
+
+
+def fetch_day(d, refresh=False):
     out = path_for(d)
+    old = None
     if out.exists():
-        return d, 'skip'
+        if not refresh or has_motor(out):
+            return d, 'skip'
+        old = json.load(gzip.open(out, 'rt', encoding='utf-8'))
     with tempfile.TemporaryDirectory() as tmp:
         txt = download_k(d, tmp)
     if txt is None:
         return d, 'none'
     venues = parse_k(txt)
-    idx = parse_index(get_official(f'index?hd={d.strftime("%Y%m%d")}'))
-    for v in venues:
-        info = idx.get(v['jcd'])
-        v['grade'] = info['grade'] if info else ''
+    if old:  # 取り直し: グレードは保存済みのものを使う（公式サイトへのアクセスを減らす）
+        grades = {v['jcd']: v.get('grade', '') for v in old['venues']}
+        for v in venues:
+            v['grade'] = grades.get(v['jcd'], '')
+    else:
+        idx = parse_index(get_official(f'index?hd={d.strftime("%Y%m%d")}'))
+        for v in venues:
+            info = idx.get(v['jcd'])
+            v['grade'] = info['grade'] if info else ''
     out.parent.mkdir(parents=True, exist_ok=True)
     body = json.dumps({'date': d.strftime('%Y%m%d'), 'venues': venues}, ensure_ascii=False, separators=(',', ':'))
     tmp = out.with_suffix('.tmp')
@@ -149,6 +170,16 @@ def fetch_day(d):
 def main():
     args = sys.argv[1:]
     end = date.today() - timedelta(days=1)
+    refresh = '--refresh' in args
+    if refresh:
+        start = datetime.strptime(args[args.index('--refresh') + 1], '%Y%m%d').date()
+        days = [start + timedelta(days=i) for i in range((end - start).days + 1)]
+        days = [d for d in days if path_for(d).exists() and not has_motor(path_for(d))]
+        print(f'取り直し {len(days)}日', flush=True)
+        with ThreadPoolExecutor(WORKERS) as pool:
+            for i, (d, msg) in enumerate(pool.map(lambda d: fetch_day(d, True), reversed(days)), 1):
+                print(f'[{i}/{len(days)}] {d} {msg}', flush=True)
+        return
     if '--since' in args:
         start = datetime.strptime(args[args.index('--since') + 1], '%Y%m%d').date()
     else:

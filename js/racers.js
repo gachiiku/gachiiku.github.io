@@ -391,7 +391,8 @@
           <span class="ln ln-${lane}">${lane}</span>
           <span class="rp-runs__st">${st == null ? '—' : st < 0 ? 'F' + st2(-st) : st2(st)}</span>
           <span class="rp-runs__c">${c ? `(${c})` : ''}</span>
-          <b>${posTxt(pos)}</b></li>`).join('')}</ol></div>`).join('');
+          <b>${posTxt(pos)}</b>
+          <button class="vbtn vbtn--sm" data-video="${x.jcd}-${d}-${r}" aria-label="映像">▶</button></li>`).join('')}</ol></div>`).join('');
   }
 
   // ---------- 画面遷移（URLの #r/登番 で選手ページを開く） ----------

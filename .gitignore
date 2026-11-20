@@ -7,3 +7,4 @@ __pycache__/
 # 選手データは GitHub Actions で毎日作り直す（リポジトリには入れない）
 data/racers/
 *.tmp
+data/motors/

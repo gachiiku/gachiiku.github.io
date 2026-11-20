@@ -37,7 +37,9 @@ jobs:
         id: cache
         uses: actions/cache/restore@v4
         with:
-          path: data/racers
+          path: |
+            data/racers
+            data/motors
           key: racers-latest
           restore-keys: racers-
 
@@ -47,6 +49,7 @@ jobs:
           command -v bsdtar || sudo apt-get install -y -qq libarchive-tools
           python -u scripts/fetch_racers.py
           python -u scripts/build_stats.py
+          python -u scripts/build_motors.py
 
       - name: 公開用ファイルをまとめる
         run: |

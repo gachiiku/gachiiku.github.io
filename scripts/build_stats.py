@@ -111,6 +111,7 @@ def load_runs():
                 sts = sorted(e[3] for e in race['e'] if e[3] is not None and e[3] > 0)
                 in_win = any(e[2] == 1 and e[4] == 1 for e in race['e'])
                 final = '優勝戦' in race['name'] and '準' not in race['name']
+                race['e'] = [e[:5] for e in race['e']]  # モーター等はここでは使わない
                 by_course = {e[2]: e for e in race['e'] if e[2]}
                 win = next((e for e in race['e'] if e[4] == 1), None)
                 order = ''.join(str(e[1]) for e in sorted((e for e in race['e'] if isinstance(e[4], int) and e[4] <= 3), key=lambda e: e[4]))

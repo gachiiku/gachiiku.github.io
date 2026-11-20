@@ -3,7 +3,7 @@
 
 元データ: 公式サイトの「モーターボートファン手帳」期別成績（半年ごと・固定長テキスト）
   https://www.boatrace.jp/owpc/pc/extra/data/download.html
-直近4期分を取得し、最新期で全選手を評価する。直近の出走は data/archive の日次データから集める。
+公開されている全期（2010年〜）を取得し、最新期で全選手を評価する。直近の出走は data/archive の日次データから集める。
 
 出力:
   data/racers/index.json      一覧・検索用（全選手の要約）
@@ -25,7 +25,7 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / 'data' / 'racers'
 URL = 'https://www.boatrace.jp/static_extra/pc_static/download/data/kibetsu/fan{}.lzh'
 UA = 'Mozilla/5.0 (compatible; wake-data/1.0)'
-PERIODS = 4  # 何期分さかのぼるか
+PERIODS = 40  # 何期分さかのぼるか（公開されている2010年分まで）
 
 # ---------- 固定長レコード（1行416バイト, Shift_JIS） ----------
 HEAD = [('no', 4), ('name', 16), ('kana', 15), ('branch', 4), ('cls', 2), ('era', 1), ('birth', 6),
@@ -110,7 +110,7 @@ def parse(buf):
 def candidates():
     """新しい順にファイル名候補（yyMM, MM=04/10）を返す。"""
     y = datetime.now().year % 100
-    for yy in range(y, y - 6, -1):
+    for yy in range(y, 9, -1):
         for mm in ('10', '04'):
             yield f'{yy:02d}{mm}'
 

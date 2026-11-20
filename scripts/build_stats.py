@@ -93,6 +93,7 @@ def load_runs():
     runs = defaultdict(list)
     files = sorted(HIST.glob('*/*.json.gz'))
     last = {}  # jcd → (title, 最後の日付, 節の初日)  同じ場・同じタイトルで日付が続けば同じ節
+    maxday = {}  # 節ID → 最終日が何日目か
     for f in files:
         day = json.load(gzip.open(f, 'rt', encoding='utf-8'))
         dt = day['date']
@@ -105,17 +106,29 @@ def load_runs():
             last[v['jcd']] = (v['title'], dt, start)
             v['day'] = (d8(dt) - d8(start)).days + 1
             sid = f"{v['jcd']:02d}{start}"
+            maxday[sid] = max(maxday.get(sid, 0), v['day'])
             for race in v['races']:
                 sts = sorted(e[3] for e in race['e'] if e[3] is not None and e[3] > 0)
                 in_win = any(e[2] == 1 and e[4] == 1 for e in race['e'])
                 final = '優勝戦' in race['name'] and '準' not in race['name']
+                by_course = {e[2]: e for e in race['e'] if e[2]}
+                win = next((e for e in race['e'] if e[4] == 1), None)
+                order = ''.join(str(e[1]) for e in sorted((e for e in race['e'] if isinstance(e[4], int) and e[4] <= 3), key=lambda e: e[4]))
                 for no, lane, course, st, pos in race['e']:
+                    nb = None  # 比べる隣の艇のST（内側。1コースは2コース）
+                    if course:
+                        n = by_course.get(course - 1 if course > 1 else 2)
+                        nb = n[3] if n and n[3] is not None and n[3] > 0 else None
                     runs[no].append({
                         'date': dt, 'jcd': v['jcd'], 'title': v['title'], 'grade': v.get('grade') or '一般',
                         'sid': sid, 'day': v.get('day'), 'r': race['r'], 'name': race['name'], 'kim': race['kim'],
                         'lane': lane, 'course': course, 'st': st, 'pos': pos, 'final': final, 'inWin': in_win,
                         'strank': sts.index(st) + 1 if st is not None and st > 0 else None,
+                        'wc': win[2] if win else None, 'order': order, 'nbSt': nb,
                     })
+    for rs in runs.values():
+        for x in rs:
+            x['last'] = x['day'] == maxday[x['sid']]
     span = (files[0].name[:8], files[-1].name[:8]) if files else ('', '')
     return runs, span
 
@@ -159,7 +172,7 @@ def build(no, rs, today):
             if x['date'] >= y5:
                 local[x['jcd']][c - 1].add(x)
         if x['final']:
-            finals.append([x['date'], x['jcd'], x['title'], x['grade'], x['r'], x['lane'], c, x['pos']])
+            finals.append([x['date'], x['jcd'], x['title'], x['grade'], x['r'], x['lane'], c, x['pos'], x['kim'], x['order']])
 
     # 直近12ヵ月の全出走を節ごとに
     series = {}
@@ -175,8 +188,82 @@ def build(no, rs, today):
     for s in series:
         s['runs'].sort(key=lambda r: (r[0], r[2]))
 
+    # ---- 期間別のコース別成績（ボートレース日和の「コース別成績」「平均ST」） ----
+    t = today
+    k0 = date(t.year, 11, 1) if t.month >= 11 else date(t.year, 5, 1) if t.month >= 5 else date(t.year - 1, 11, 1)
+    ago = lambda n: (today - timedelta(days=n)).strftime('%Y%m%d')  # noqa: E731
+    big = lambda x: x['grade'] in ('SG', 'G1')  # noqa: E731
+    windows = [
+        ('今期', lambda x: x['date'] >= k0.strftime('%Y%m%d')),
+        ('直近1年', lambda x: x['date'] >= y1),
+        ('直近6ヶ月', lambda x: x['date'] >= ago(182)),
+        ('直近3ヶ月', lambda x: x['date'] >= ago(91)),
+        ('直近1ヶ月', lambda x: x['date'] >= ago(30)),
+        ('一般戦', lambda x: x['date'] >= y1 and not big(x)),
+        ('SG・G1', lambda x: x['date'] >= y1 and big(x)),
+        ('初日', lambda x: x['date'] >= y1 and x['day'] == 1),
+        ('最終日', lambda x: x['date'] >= y1 and x['last'] and x['day'] > 1),
+    ]
+    period = {name: [Acc() for _ in range(6)] for name, _ in windows}
+    # ---- 枠別決まり手（勝ち方・負け方）: 範囲 × 期間 × コース → [出走, a, b, c, d]
+    #   1コース: 逃げ / 差され / 捲られ / 捲られ差
+    #   2〜6コース: 逃し(1コースに逃げられた) / 差し / 捲り / 捲り差し
+    kimt = {sc: {w: [[0] * 5 for _ in range(6)] for w in ('1y', '6m')} for sc in ('all', 'gen', 'big')}
+    # ---- ST考察（直近1年）: [STのある出走, 安定, 抜出の対象, 抜出, 出遅]
+    sta = [[0] * 5 for _ in range(6)]
+    lose = [[0, 0, {}] for _ in range(6)]  # 出走, 負け, {勝った艇のコース+決まり手: 回数}
+    for x in rs:
+        c = x['course']
+        if not c or (isinstance(x['pos'], str) and x['pos'].startswith('K')):
+            continue
+        for name, f in windows:
+            if f(x):
+                period[name][c - 1].add(x)
+        if x['date'] < y1:
+            continue
+        mine = x['pos'] == 1
+        if c == 1:
+            hit = [mine and x['kim'] == '逃げ', not mine and x['kim'] == '差し',
+                   not mine and x['kim'] == 'まくり', not mine and x['kim'] == 'まくり差し']
+        else:
+            hit = [x['wc'] == 1 and x['kim'] == '逃げ', mine and x['kim'] == '差し',
+                   mine and x['kim'] == 'まくり', mine and x['kim'] == 'まくり差し']
+        # 負け筋: 1着になれなかったとき、何コースの艇にどの決まり手で勝たれたか
+        lose[c - 1][0] += 1
+        if not mine and x['wc'] and x['kim']:
+            lose[c - 1][1] += 1
+            key = f"{x['wc']}{x['kim']}"
+            lose[c - 1][2][key] = lose[c - 1][2].get(key, 0) + 1
+        for sc in ('all', 'big' if big(x) else 'gen'):
+            for w in ('1y', '6m') if x['date'] >= ago(182) else ('1y',):
+                row = kimt[sc][w][c - 1]
+                row[0] += 1
+                for i, h in enumerate(hit):
+                    row[i + 1] += h
+        st = x['st']
+        if st is not None and st > 0:
+            avg = course[c - 1].st / course[c - 1].stn if course[c - 1].stn else st
+            a = sta[c - 1]
+            a[0] += 1
+            a[1] += abs(st - avg) <= 0.03
+            if x['nbSt'] is not None:
+                if c > 1:
+                    a[2] += 1
+                    a[3] += x['nbSt'] - st >= 0.05
+                a[4] += st - x['nbSt'] >= 0.05
+
+    def kim_out(rows):
+        return [[r[0]] + [round(v / r[0] * 100, 1) if r[0] else None for v in r[1:]] for r in rows]
+
     full = ('n', 'series', 'win', 'w1', 'r1', 'r2', 'r3', 'finals', 'champs', 'st', 'strank', 'p', 'F', 'L', 'K', 'S')
     return {
+        'period': {name: [a.out('n', 'r1', 'r2', 'r3', 'st', 'strank') for a in accs] for name, accs in period.items()},
+        'kimt': {sc: {w: kim_out(v) for w, v in d.items()} for sc, d in kimt.items()},
+        'lose1y': [{'n': n, 'lost': l, 'by': [[int(k[0]), k[1:], v] for k, v in sorted(by.items(), key=lambda kv: -kv[1])[:6]]}
+                   for n, l, by in lose],
+        'sta': [{'n': a[0], 'stable': round(a[1] / a[0] * 100, 1) if a[0] else None,
+                 'jump': round(a[3] / a[2] * 100, 1) if a[2] else None,
+                 'late': round(a[4] / a[0] * 100, 1) if a[0] else None} for a in sta],
         'no': no,
         'grade': {g: grade[g].out(*full) for g in GRADES + ['総合']},
         'lane': [a.out('n', 'finals', 'champs', 'r1', 'r2', 'r3', 'w1', 'course') for a in lane],

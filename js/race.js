@@ -168,11 +168,26 @@ window.WAKE_READY.then((first) => {
     // イン逃げ時（2〜6コース）
     const inesc = boats.map((x) => (x.s && x.b.lane > 1 ? x.s.inesc1y[x.b.lane - 1] : null));
 
+    // 勝ち筋・負け筋（1コースは 逃げ/差され/捲られ/捲られ差、2〜6コースは 逃し/差し/捲り/捲り差し）
+    const KN = [['逃げ', '逃し'], ['差され', '差し'], ['捲られ', '捲り'], ['捲られ差', '捲り差し']];
+    const KS = { 'まくり': '捲り', 'まくり差し': '捲り差し' };
+    const kimOf = (x) => (x.s && x.s.kimt ? x.s.kimt.all['1y'][x.b.lane - 1] : null);
+    const kimRows = KN.map(([l1, l2], i) => `<tr><th>${l1} / ${l2}</th>${boats.map((x) => {
+      const k = kimOf(x);
+      const lose = (x.b.lane === 1 && i > 0) || (x.b.lane > 1 && i === 0);
+      return `<td class="${lose ? 'k-lose-c' : 'k-gain-c'}">${k && k[0] ? `<small>${x.b.lane === 1 ? l1 : l2}</small><b>${f1(k[i + 1])}</b>` : '—'}</td>`;
+    }).join('')}</tr>`).join('')
+      + `<tr><th>主な負け方</th>${boats.map((x) => {
+        const L = x.s && x.s.lose1y ? x.s.lose1y[x.b.lane - 1] : null;
+        if (!L || !L.n) return '<td>—</td>';
+        return `<td class="rc-lose">${L.by.slice(0, 2).map(([c, k, n]) => `<span><i class="ln ln-${c}">${c}</i>${KS[k] || k}<b>${(n / L.n * 100).toFixed(0)}%</b></span>`).join('') || '<small>負けなし</small>'}</td>`;
+      }).join('')}</tr>`;
+
     const table = `<div class="rc-scroll"><table class="rc-tbl">
       <thead><tr><th>枠</th>${boats.map(({ b }) => `<th><span class="ln ln-${b.lane}">${b.lane}</span></th>`).join('')}</tr></thead>
       <tbody>
         ${row('選手', ({ b, p }) => `<a class="rc-name" href="#r/${b.no}"><b>${b.name}</b><small>${b.no}${p ? `・${p.grad}期` : ''}</small></a>`, 'rc-who')}
-        ${row('級別<br><small>年齢・支部</small>', ({ b, p }) => `<span class="cls cls-${b.cls}">${b.cls}</span><small>${b.age}歳・${b.branch}</small>${p && p.grade !== '-' ? `<small class="rc-grade">WAKE評価 <span class="grade grade--${p.grade}">${p.grade}</span></small>` : ''}`)}
+        ${row('級別<br><small>年齢・支部</small>', ({ b, p }) => `<span class="cls cls-${b.cls}">${b.cls}</span><small>${b.age}歳・${b.branch}</small>`)}
         ${row('体重', ({ b }) => `${b.weight ?? '—'}<small>kg</small>`)}
         ${row('F / L', ({ b }) => `<span class="${b.f ? 'is-warn' : ''}">F${b.f || 0}</span> / L${b.l || 0}`)}
         ${row('全国<br><small>勝率 / 2連率</small>', ({ b }) => `${num(b.nat, f2, bestNat)}<small>${f1(b.nat2)}%</small>`)}
@@ -180,6 +195,8 @@ window.WAKE_READY.then((first) => {
         ${row('モーター<br><small>No / 2連率</small>', ({ b }) => `<small>#${b.motorNo}</small>${num(b.motor2, f1, bestMot)}`)}
         ${row('ボート<br><small>No / 2連率</small>', ({ b }) => `<small>#${b.boatNo}</small>${f1(b.boat2)}`)}
         ${row('展示<br><small>タイム / チルト</small>', ({ b }) => (b.exTime ? `${num(b.exTime, f2, bestEx)}<small>${b.tilt ?? ''}</small>` : '—'))}
+        ${sec('勝ち筋・負け筋', '直近1年・枠なり進入のとき')}
+        ${kimRows}
         ${sec('スタートデータ')}
         ${row('平均ST<br><small>全国</small>', ({ b }) => num(b.st, st2, bestSt))}
         ${row('今節平均ST', (x) => num(serSt[x.i], st2, best(serSt, true)))}

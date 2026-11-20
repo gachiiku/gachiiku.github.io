@@ -199,8 +199,8 @@
         </tr>`).join('')}</tbody></table></div>
       <p class="rp-legend"><i class="p1"></i>1着 <i class="p2"></i>2着 <i class="p3"></i>3着 <i class="p4"></i>4着以下</p></div>`;
 
-    const histCard = `<div class="card"><h4 class="card__h">期別の推移 <small>半年ごと</small></h4>
-      <div class="rp-tbl-wrap"><table class="rp-tbl rp-tbl--hist">
+    const histCard = `<div class="card"><h4 class="card__h">期別成績 <small>半年ごと・${r.hist.length}期分</small></h4>
+      <div class="rp-tbl-wrap rp-tbl-wrap--tall"><table class="rp-tbl rp-tbl--hist">
         <thead><tr><th>期間</th><th>級別</th><th>勝率</th><th>2連対率</th><th>平均ST</th><th>出走</th><th>1着</th><th>優勝</th><th>能力指数</th></tr></thead>
         <tbody>${r.hist.map((h) => `<tr>
           <td>${h.from ? `${h.from.slice(2, 4)}/${+h.from.slice(4, 6)}〜${h.to.slice(2, 4)}/${+h.to.slice(4, 6)}` : h.term}</td><td><span class="cls cls-${h.cls}">${h.cls}</span></td>
@@ -217,17 +217,28 @@
         <span class="ln ln-${x.lane}">${x.lane}</span>
         <b>${posLabel(x)}</b></li>`).join('')}</ul>` : '<p class="empty">記録がありません</p>'}</div>`;
 
-    const TABS = [['top', '評価・概要'], ['stats', '成績データ'], ['finals', '優出'], ['races', '全出走']];
+    const TABS = [['top', '評価・概要'], ['course', '決まり手・コース'], ['stats', '成績データ'], ['venue', '場別'], ['finals', '優出'], ['races', '全出走']];
     const tabs = `<div class="rp-tabs" role="tablist">${TABS.map(([k, l]) =>
       `<button data-rtab="${k}" class="${rpTab === k ? 'is-on' : ''}">${l}</button>`).join('')}</div>`;
-    const top = `<div class="rp-grid"><div>${evalCard}${histCard}</div><div>${courseCard}${recentCard}</div></div>`;
+    const top = (s ? `<div class="rp-pair">${kimCard(s)}${loseCard(s)}</div>` : '')
+      + `<div class="rp-grid"><div>${evalCard}${histCard}</div><div>${courseCard}${recentCard}</div></div>`;
     const body = rpTab === 'top' ? top : !s ? '<p class="empty">成績データを準備中です。</p>'
-      : rpTab === 'stats' ? statsTab(s) : rpTab === 'finals' ? finalsTab(s) : racesTab(s);
+      : rpTab === 'stats' ? statsTab(s) : rpTab === 'course' ? courseTab(s) : rpTab === 'venue' ? venueTab(s)
+        : rpTab === 'finals' ? finalsTab(s) : racesTab(s);
     $('#rp-body').innerHTML = head + kpis + tabs + `<div class="rp-pane">${body}</div>`;
     rerender = () => renderRacer(r, s);
   }
   let rerender = null;
   document.addEventListener('click', (e) => {
+    const opt = e.target.closest('[data-ropt]');
+    if (opt && rerender) {
+      const [k, v] = opt.dataset.ropt.split(':');
+      ropt[k] = v;
+      const keep = $('#rp-body').scrollTop;
+      rerender();
+      $('#rp-body').scrollTop = keep;
+      return;
+    }
     const b = e.target.closest('[data-rtab]');
     if (!b || !rerender) return;
     rpTab = b.dataset.rtab;
@@ -261,17 +272,113 @@
       <div class="card"><h4 class="card__h">グレード別成績</h4>${grade}</div>
       <div class="card"><h4 class="card__h">艇番別成績 <small>枠番ごとの成績と、実際に入ったコース</small></h4>${lane}</div>
       <div class="card"><h4 class="card__h">進入コース別成績 <small>決まり手は1着になったときの数</small></h4>${course}</div>
-      <div class="card"><h4 class="card__h">競艇場別成績</h4>${venue}</div></div>`;
+      </div>`;
   }
+
+  // ---------- コース別（期間別成績・ST・勝ち方/負け方・前づけ） ----------
+  const ropt = { metric: 'r1', scope: 'all' };
+  const seg = (key, items) => `<div class="seg seg--sm">${items.map(([v, l]) =>
+    `<button data-ropt="${key}:${v}" class="${ropt[key] === v ? 'is-on' : ''}">${l}</button>`).join('')}</div>`;
+  const C6 = [1, 2, 3, 4, 5, 6];
+  const cHead = (first) => `<thead><tr><th>${first}</th>${C6.map((c) => `<th><span class="ln ln-${c}">${c}</span></th>`).join('')}</tr></thead>`;
+  const heat = (v, max) => (v == null ? '' : ` style="--h:${Math.min(v / max, 1).toFixed(2)}"`);
+
+  function courseTab(s) {
+    const P = s.period;
+    const names = ['今期', '直近1年', '直近6ヶ月', '直近3ヶ月', '直近1ヶ月', '一般戦', 'SG・G1'];
+    const m = ropt.metric;
+    const rate = `<div class="card"><h4 class="card__h">コース別成績 <small>（ ）は出走数</small>${seg('metric', [['r1', '1着率'], ['r2', '2連対率'], ['r3', '3連対率']])}</h4>
+      <div class="rp-tbl-wrap"><table class="rp-tbl rp-ctbl">${cHead('期間')}<tbody>${names.map((n) => `<tr><th>${n}</th>${P[n].map((a) =>
+        `<td class="heat"${heat(a.n ? a[m] : null, m === 'r1' ? 80 : 100)}>${a.n ? `${a[m].toFixed(1)}<small>(${a.n})</small>` : '—'}</td>`).join('')}</tr>`).join('')}</tbody></table></div></div>`;
+    const lanes = s.lane;
+    const mae = `<div class="card"><h4 class="card__h">前づけデータ <small>枠番ごとに実際に入ったコース</small></h4>
+      <div class="rp-tbl-wrap"><table class="rp-tbl rp-ctbl">${cHead('枠＼コース')}<tbody>${lanes.map((a, i) => {
+        const tot = a.course.slice(0, 6).reduce((x, y) => x + y, 0);
+        return `<tr><th><span class="ln ln-${i + 1}">${i + 1}</span></th>${a.course.slice(0, 6).map((n, k) =>
+          `<td class="heat ${k === i ? 'is-same' : ''}"${heat(tot ? n / tot * 100 : null, 100)}>${tot ? Math.round(n / tot * 1000) / 10 + '%' : '—'}</td>`).join('')}</tr>`;
+      }).join('')}</tbody></table></div></div>`;
+    const stNames = [...names, '初日', '最終日'];
+    const st = `<div class="card"><h4 class="card__h">平均ST・ST順位</h4>
+      <div class="rp-tbl-wrap"><table class="rp-tbl rp-ctbl">${cHead('期間')}<tbody>${stNames.map((n) => `<tr><th>${n}</th>${P[n].map((a) =>
+        `<td>${a.n && a.st != null ? `${st2(a.st)}<small>${a.strank != null ? a.strank.toFixed(1) + '位' : ''}</small>` : '—'}</td>`).join('')}</tr>`).join('')}</tbody></table></div>
+      <h5 class="rp-sub">ST考察 <small>直近1年</small></h5>
+      <div class="rp-tbl-wrap"><table class="rp-tbl rp-ctbl">${cHead('')}<tbody>
+        <tr><th>安定率</th>${s.sta.map((a) => `<td>${pct(a.stable)}</td>`).join('')}</tr>
+        <tr><th>抜出率</th>${s.sta.map((a) => `<td>${a.jump == null ? '—' : pct(a.jump)}</td>`).join('')}</tr>
+        <tr><th>出遅率</th>${s.sta.map((a) => `<td class="${a.late >= 20 ? 'is-hi' : ''}">${pct(a.late)}</td>`).join('')}</tr>
+      </tbody></table></div>
+      <p class="rp-def">安定率＝そのコースの平均STから±0.03以内　抜出率＝内側の艇より0.05以上早い　出遅率＝内側の艇（1コースは2コース）より0.05以上遅い</p></div>`;
+
+    return spanNote(s) + `<div class="rp-stack">${kimCard(s)}${loseCard(s)}${rate}${st}${mae}</div>`;
+  }
+
+  function kimCard(s) {
+    const K = s.kimt[ropt.scope];
+    const labels = [['逃げ', '逃し'], ['差され', '差し'], ['捲られ', '捲り'], ['捲られ差', '捲り差し']];
+    const kim = `<div class="card"><h4 class="card__h">枠別決まり手 <small>勝ち方・負け方</small>${seg('scope', [['all', '総合'], ['gen', '一般戦'], ['big', 'SG・G1']])}</h4>
+      <div class="rp-tbl-wrap"><table class="rp-tbl rp-ctbl rp-kim">${cHead('')}<tbody>${labels.map(([l1, l2], i) => `<tr>
+        <th>${l1}<small>${l2}</small></th>${C6.map((c) => {
+          const y = K['1y'][c - 1], h = K['6m'][c - 1];
+          const lose = (c === 1 && i > 0) || (c > 1 && i === 0);
+          return `<td class="${lose ? 'is-lose' : 'is-gain'}"><b>${y[0] ? pct(y[i + 1]) : '—'}</b><small>${h[0] ? pct(h[i + 1]) : '—'}</small></td>`;
+        }).join('')}</tr>`).join('')}
+        <tr class="rp-kim__n"><th>出走数</th>${C6.map((c) => `<td>${K['1y'][c - 1][0]}<small>${K['6m'][c - 1][0]}</small></td>`).join('')}</tr>
+      </tbody></table></div>
+      <p class="rp-def">上：直近1年／下：直近6ヶ月（%）。行の左の名前は1コース、右の名前は2〜6コースのとき。<b class="k-lose">赤</b>は負け方（1コースで差され・捲られ、2〜6コースで1コースに逃げられた）、<b class="k-gain">青</b>は自分が1着になった決まり手。</p></div>`;
+    return kim;
+  }
+
+  // 負け筋: 1着を逃したとき、何コースの艇にどの決まり手で勝たれたか
+  const KS = { 'まくり': '捲り', 'まくり差し': '捲り差し' };
+  function loseCard(s) {
+    const rows = s.lose1y.map((a, i) => {
+      if (!a.n) return `<li><span class="ln ln-${i + 1}">${i + 1}</span><span class="lose__n">出走なし</span></li>`;
+      const lostPct = a.lost / a.n * 100;
+      return `<li><span class="ln ln-${i + 1}">${i + 1}</span>
+        <span class="lose__n"><b>${a.n}</b>走中 <b class="k-lose">${a.lost}</b>回負け<small>（${lostPct.toFixed(0)}%）</small></span>
+        <span class="lose__by">${a.by.length ? a.by.map(([c, k, n]) => `<span class="lose__chip" style="--w:${(n / a.n * 100).toFixed(1)}%">
+          <i class="ln ln-${c}">${c}</i>${KS[k] || k}<b>${(n / a.n * 100).toFixed(1)}%</b><small>${n}回</small></span>`).join('') : '<small>負けなし</small>'}</span></li>`;
+    }).join('');
+    return `<div class="card card--lose"><h4 class="card__h">負け筋 <small>コースごとに、1着を取られた相手のコースと決まり手（直近1年）</small></h4>
+      <ul class="lose">${rows}</ul>
+      <p class="rp-def">％はそのコースの出走数に対する割合。例：「1 逃げ 80%」＝そのコースで走ったレースの80%で、1コースに逃げ切られた。</p></div>`;
+  }
+
+  // ---------- 場別 ----------
+  function venueTab(s) {
+    const vs = Object.entries(s.venue).sort((a, b) => a[0] - b[0]);
+    const sum = tbl(['競艇場', '節数', '出走', '優出', '優勝', '勝率', '1着率', '2連対率', '3連対率', '平均ST'],
+      vs.map(([j, a]) => `<tr><td><a href="#" data-vjump="${j}">${VENUES[j]}</a></td><td>${a.series}</td><td>${a.n}</td><td>${a.finals}</td><td class="${a.champs ? 'is-hi' : ''}">${a.champs}</td><td>${f2(a.win)}</td><td>${pct(a.r1)}</td><td>${pct(a.r2)}</td><td>${pct(a.r3)}</td><td>${st2(a.st)}</td></tr>`));
+    const cards = vs.filter(([j]) => s.local5y[j]).map(([j]) => {
+      const L = s.local5y[j];
+      return `<div class="card rp-vcard" id="rv${j}"><h4 class="card__h">ボートレース${VENUES[j]} <small>コース別・直近5年</small></h4>
+        <div class="rp-tbl-wrap"><table class="rp-tbl rp-ctbl">${cHead('')}<tbody>
+          <tr><th>進入</th>${L.map((a) => `<td>${a.n || '—'}</td>`).join('')}</tr>
+          <tr><th>平均ST</th>${L.map((a) => `<td>${a.n ? st2(a.st) : '—'}</td>`).join('')}</tr>
+          <tr><th>1着率</th>${L.map((a) => `<td class="heat"${heat(a.n ? a.r1 : null, 80)}>${a.n ? pct(a.r1) : '—'}</td>`).join('')}</tr>
+          <tr><th>2連対率</th>${L.map((a) => `<td>${a.n ? pct(a.r2) : '—'}</td>`).join('')}</tr>
+          <tr><th>3連対率</th>${L.map((a) => `<td>${a.n ? pct(a.r3) : '—'}</td>`).join('')}</tr>
+        </tbody></table></div></div>`;
+    }).join('');
+    return spanNote(s) + `<div class="rp-stack"><div class="card"><h4 class="card__h">場別成績 <small>場名を押すとコース別へ</small></h4>${sum}</div>
+      <div class="rp-vgrid">${cards}</div></div>`;
+  }
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest('[data-vjump]');
+    if (!a) return;
+    e.preventDefault();
+    const el = document.getElementById('rv' + a.dataset.vjump);
+    if (el) $('#rp-body').scrollTop = el.offsetTop - $('.rp-tabs').offsetHeight - 12;
+  });
 
   function finalsTab(s) {
     if (!s.finals.length) return spanNote(s) + '<p class="empty">集計期間内の優出はありません</p>';
     return spanNote(s) + `<div class="card"><h4 class="card__h">優出データ <small>${s.finals.length}回・優勝${s.finals.filter((f) => f[7] === 1).length}回</small></h4>
-      <ul class="rp-fin">${s.finals.map(([d, j, title, g, r, lane, c, pos]) => `<li class="${pos === 1 ? 'is-win' : ''}">
+      <ul class="rp-fin">${s.finals.map(([d, j, title, g, r, lane, c, pos, kim, order]) => `<li class="${pos === 1 ? 'is-win' : ''}">
         <span class="rp-fin__d">${ymd(d)}</span>
         <span class="rp-fin__t"><span class="tag tag--g ${g === 'SG' || g === 'G1' ? 'is-big' : ''}">${g}</span>${title}<small>${VENUES[j]} ${r}R</small></span>
         <span class="rp-fin__l"><span class="ln ln-${lane}">${lane}</span><small>${c ? `(${c})` : ''}</small></span>
-        <b>${pos === 1 ? '優勝' : posTxt(pos) + (typeof pos === 'number' ? '着' : '')}</b></li>`).join('')}</ul></div>`;
+        <b>${pos === 1 ? '優勝' : posTxt(pos) + (typeof pos === 'number' ? '着' : '')}<small>${kim || ''}${order ? ` ${order.split('').join('-')}` : ''}</small></b></li>`).join('')}</ul></div>`;
   }
 
   function racesTab(s) {

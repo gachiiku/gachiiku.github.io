@@ -742,3 +742,74 @@ a.en__who:hover b { color: var(--navy); text-decoration: underline; }
   .rc-tbl tr.rc-sec th small { display: block; margin: 0; }
   .rc-scroll { margin: 0 -12px; border-radius: 0; border-left: 0; border-right: 0; }
 }
+
+/* 選手ページ: コース別・場別 */
+.card__h .seg { margin-left: auto; }
+.seg--sm button { padding: 3px 10px; font-size: 12px; }
+.rp-sub { font-size: 13px; font-weight: 900; margin: 14px 0 6px; }
+.rp-sub small { font-weight: 400; color: var(--tx-3); margin-left: 6px; }
+.rp-def { font-size: 11px; color: var(--tx-3); margin-top: 8px; line-height: 1.6; }
+.rp-ctbl { table-layout: fixed; min-width: 480px; }
+.rp-ctbl th { text-align: center !important; }
+.rp-ctbl thead th:first-child, .rp-ctbl tbody th { width: 86px; text-align: left !important; font-size: 12px; color: var(--tx-2); font-weight: 700; padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.rp-ctbl tbody th small { display: block; font-weight: 400; color: var(--tx-3); font-size: 10.5px; }
+.rp-ctbl td { text-align: center !important; font-size: 15px; }
+.rp-ctbl td small { display: block; font-size: 10.5px; color: var(--tx-3); line-height: 1.2; }
+.rp-ctbl thead .ln { width: 24px; height: 24px; font-size: 14px; }
+.rp-ctbl td.heat { background: rgba(18, 48, 95, calc(var(--h, 0) * .16)); }
+.rp-ctbl td.is-same { font-weight: 600; color: var(--navy); }
+.rp-kim td { padding: 6px 4px; }
+.rp-kim td b { font-weight: 500; display: block; }
+.rp-kim td.is-lose b { color: var(--red); }
+.rp-kim td.is-gain b { color: var(--navy); }
+.rp-kim__n td { font-size: 13px; color: var(--tx-2); }
+.k-lose { color: var(--red); } .k-gain { color: var(--navy); }
+.rp-tbl-wrap--tall { max-height: 360px; overflow-y: auto; }
+.rp-vgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.rp-fin b small { display: block; font-size: 10.5px; color: var(--tx-3); font-weight: 400; font-family: var(--num); }
+.rp-tbl--stat td a { color: var(--navy); text-decoration: underline; }
+@media (max-width: 1000px) { .rp-vgrid { grid-template-columns: 1fr; } }
+@media (max-width: 600px) {
+  .rp-ctbl { min-width: 0; }
+  .rp-ctbl thead th:first-child, .rp-ctbl tbody th { width: 62px; font-size: 10.5px; padding: 5px 4px; }
+  .rp-ctbl td { font-size: 13px; padding: 5px 2px; }
+  .rp-ctbl td small { font-size: 9.5px; }
+  .rp-ctbl thead .ln { width: 20px; height: 20px; font-size: 12px; }
+  .card__h .seg { margin-left: 0; width: 100%; }
+  .card__h .seg button { flex: 1; }
+}
+
+/* 決まり手・負け筋 */
+.rp-pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; margin-bottom: 16px; }
+.card--lose { border-color: #efb6b8; }
+.card--lose .card__h { color: var(--red); }
+.lose { list-style: none; display: flex; flex-direction: column; }
+.lose li { display: grid; grid-template-columns: 26px 150px minmax(0, 1fr); gap: 10px; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--line); }
+.lose .ln { width: 24px; height: 24px; font-size: 14px; }
+.lose__n { font-size: 12px; color: var(--tx-2); }
+.lose__n b { font-family: var(--num); font-size: 15px; font-weight: 500; color: var(--tx); }
+.lose__n b.k-lose { color: var(--red); }
+.lose__n small { color: var(--tx-3); }
+.lose__by { display: flex; flex-wrap: wrap; gap: 4px; }
+.lose__chip {
+  display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px 2px 3px; border-radius: 3px; font-size: 12px;
+  background: linear-gradient(90deg, var(--red-2) var(--w), var(--bg-2) var(--w)); border: 1px solid var(--line);
+}
+.lose__chip i { font-style: normal; width: 18px; height: 18px; font-size: 12px; }
+.lose__chip b { font-family: var(--num); font-weight: 500; color: var(--red); }
+.lose__chip small { color: var(--tx-3); font-size: 10px; }
+.rc-tbl td.k-lose-c b { color: var(--red); }
+.rc-tbl td.k-lose-c { background: #fdf5f5; }
+.rc-tbl td.k-gain-c b { color: var(--navy); }
+.rc-tbl td.k-lose-c small, .rc-tbl td.k-gain-c small { font-family: var(--font); }
+.rc-lose span { display: flex; align-items: center; justify-content: center; gap: 2px; font-family: var(--font); font-size: 11px; white-space: nowrap; }
+.rc-lose span + span { margin-top: 2px; }
+.rc-lose .ln { width: 16px; height: 16px; font-size: 11px; font-style: normal; }
+.rc-lose b { font-family: var(--num); color: var(--red); font-weight: 500; font-size: 13px; }
+@media (max-width: 1000px) { .rp-pair { grid-template-columns: 1fr; } }
+@media (max-width: 600px) {
+  .lose li { grid-template-columns: 24px minmax(0, 1fr); }
+  .lose__by { grid-column: 1 / -1; }
+  .rc-lose span { font-size: 9.5px; flex-wrap: wrap; }
+  .rc-lose b { font-size: 11px; }
+}

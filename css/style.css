@@ -900,3 +900,22 @@ a.en__who:hover b { color: var(--navy); text-decoration: underline; }
   .mbtn b { font-size: 12px; }
   .mbtn span { font-size: 9.5px; }
 }
+
+/* ヘッダー: 次の締切カウントダウン */
+.hdr__next { margin-left: auto; display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; border-radius: var(--r); background: var(--navy-2); color: var(--navy); white-space: nowrap; }
+.hdr__next[hidden] { display: none; }
+.hdr__next small { font-size: 10.5px; color: var(--tx-2); }
+.hdr__nrace { font-size: 13px; font-weight: 700; }
+.hdr__next b { font-family: var(--num); font-size: 20px; font-weight: 500; min-width: 54px; text-align: right; }
+.hdr__next:hover { background: #dbe3f0; }
+.hdr__next.is-hot { background: var(--red); color: #fff; }
+.hdr__next.is-hot small { color: rgba(255, 255, 255, .8); }
+.hdr__next + .hdr__clock { margin-left: 16px; }
+@media (max-width: 600px) {
+  .hdr__next { gap: 5px; height: 32px; padding: 0 8px; }
+  .hdr__next small { display: none; }
+  .hdr__nrace { font-size: 11.5px; }
+  .hdr__next b { font-size: 16px; min-width: 42px; }
+  .hdr__next + .hdr__clock { margin-left: 8px; font-size: 15px; }
+  .hdr__next + .hdr__clock small { display: none; }
+}

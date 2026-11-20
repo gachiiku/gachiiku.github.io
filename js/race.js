@@ -1,5 +1,5 @@
 /* =========================================================
-   WAKE — レースページ（race.html?j=場コード&r=レース番号[&d=日付]）
+   GACHIIKU — レースページ（race.html?j=場コード&r=レース番号[&d=日付]）
    出走表を「艇ごとの縦の列」で並べ、コース別データ・今節成績を載せる。
    ========================================================= */
 window.WAKE_READY.then((first) => {
@@ -63,7 +63,7 @@ window.WAKE_READY.then((first) => {
       `<a href="?${isToday ? '' : `d=${date}&`}j=${v.id}&r=${x.no}" class="${x.no === r.no ? 'is-on' : ''} ${x.result ? 'is-done' : ''}">${x.no}R<small>${hm(x.deadline)}</small></a>`).join('');
     const on = $('#rc-tabs .is-on');
     if (on) on.scrollIntoView({ block: 'nearest', inline: 'center' });
-    document.title = `${v.name} ${r.no}R 出走表｜WAKE`;
+    document.title = `${v.name} ${r.no}R 出走表｜GACHIIKU`;
   }
 
   // ---------- 今節成績 ----------
@@ -222,7 +222,7 @@ window.WAKE_READY.then((first) => {
         ${row('貢献P', ({ b }) => { const s = mstat(v.id, b.motorNo); return s && s.all.kp != null ? `<b class="${s.all.kp > 0 ? 'is-plus' : 'is-minus'}">${s.all.kp > 0 ? '+' : ''}${s.all.kp.toFixed(2)}</b>` : '—'; })}
         ${row('展示順位<br><small>平均</small>', ({ b }) => { const s = mstat(v.id, b.motorNo); return s && s.all.exRank ? f2(s.all.exRank) : '—'; })}
         ${row('履歴', ({ b }) => `<a class="mbtn" href="#m/${b.motorNo}">#${b.motorNo} 履歴</a>`)}
-        ${sec('モーター評価', 'WAKE独自の評価')}
+        ${sec('モーター評価', 'GACHIIKU独自の評価')}
         ${row('総合', ({ b }) => mevTotal(v.id, b.motorNo))}
         ${MEV_AXES.map(([k, l]) => row(`${l}<br><small>5点満点</small>`, ({ b }) => mevCell(v.id, b.motorNo, k))).join('')}
         ${boats.some(({ b }) => (mev[`${v.id}-${b.motorNo}`] || {}).memo) ? row('メモ', ({ b }) => `<span class="mev-memo">${esc((mev[`${v.id}-${b.motorNo}`] || {}).memo || '')}</span>`, 'is-memo') : ''}
@@ -295,7 +295,7 @@ window.WAKE_READY.then((first) => {
       <div><dt>展示順位</dt><dd>${f2(a.exRank)}</dd></div>
       <div><dt>出走</dt><dd>${a.n}<small>走</small></dd></div>
       <div><dt>優出 / 優勝</dt><dd>${a.finals} / ${a.champs}</dd></div></dl></div>`;
-    const evalHtml = e ? `<div class="mo-eval"><b>WAKE評価</b>${MEV_AXES.map(([k, l]) => `<span>${l} <b>${e[k] || '—'}</b></span>`).join('')}<span>総合 ${mevTotal(d.jcd, d.motor)}</span>${e.memo ? `<em>${esc(e.memo)}</em>` : ''}</div>` : '';
+    const evalHtml = e ? `<div class="mo-eval"><b>GACHIIKU評価</b>${MEV_AXES.map(([k, l]) => `<span>${l} <b>${e[k] || '—'}</b></span>`).join('')}<span>総合 ${mevTotal(d.jcd, d.motor)}</span>${e.memo ? `<em>${esc(e.memo)}</em>` : ''}</div>` : '';
     const ser = d.series.map((s) => `<div class="card mo-ser">
       <h4 class="card__h"><span class="tag tag--g ${s.grade === 'SG' || s.grade === 'G1' ? 'is-big' : ''}">${s.grade}</span>${s.title}
         <small>${+s.from.slice(4, 6)}/${+s.from.slice(6)}〜${+s.to.slice(4, 6)}/${+s.to.slice(6)}</small></h4>

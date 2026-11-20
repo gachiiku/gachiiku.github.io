@@ -20,7 +20,7 @@ from datetime import datetime
 from pathlib import Path
 
 BASE = 'https://www.boatrace.jp/owpc/pc/race'
-UA = 'Mozilla/5.0 (WAKE data fetcher; personal use)'
+UA = 'Mozilla/5.0 (GACHIIKU data fetcher; personal use)'
 WAIT = 0.4  # 秒
 WORKERS = 4  # 同時接続数(公式サイトの応答が遅いので少しだけ並列にする)
 OUT = Path(__file__).resolve().parent.parent / 'data' / 'today.json'

@@ -1,5 +1,5 @@
 /* =========================================================
-   WAKE — 選手ページ
+   GACHIIKU — 選手ページ
    一覧・検索（#players）と、選手ごとの評価ページ（#r/<登番>）
    ========================================================= */
 (() => {
@@ -162,7 +162,7 @@
     const head = `<div class="rp-top">
       <div class="rp-grade">
         <span class="grade grade--lg grade--${r.grade === '-' ? 'x' : r.grade}">${r.grade}</span>
-        <div><b>WAKE評価 ${r.grade}</b><small>${GRADE_NOTE[r.grade]}${r.rank ? `・能力指数 ${r.rank}位${total ? ` / ${total.toLocaleString()}人` : ''}` : ''}</small></div>
+        <div><b>GACHIIKU評価 ${r.grade}</b><small>${GRADE_NOTE[r.grade]}${r.rank ? `・能力指数 ${r.rank}位${total ? ` / ${total.toLocaleString()}人` : ''}` : ''}</small></div>
       </div>
       <dl class="rp-prof">
         <div><dt>級別</dt><dd><span class="cls cls-${r.cls}">${r.cls}</span></dd></div>
@@ -210,7 +210,7 @@
 
     const d0 = new Date(), today = `${d0.getFullYear()}${String(d0.getMonth() + 1).padStart(2, '0')}${String(d0.getDate()).padStart(2, '0')}`;
     const posLabel = (x) => (x.canceled ? '中止' : x.pos == null ? (x.date === today ? "出走予定" : "—") : x.pos === 0 ? '4着以下' : x.pos + '着');
-    const recentCard = `<div class="card"><h4 class="card__h">最近の出走 <small>WAKEで記録している日から</small></h4>
+    const recentCard = `<div class="card"><h4 class="card__h">最近の出走 <small>GACHIIKUで記録している日から</small></h4>
       ${r.recent.length ? `<ul class="rp-recent">${r.recent.map((x) => `<li class="${x.pos === 1 ? 'is-win' : ''}">
         <span class="rp-recent__d">${+x.date.slice(4, 6)}/${+x.date.slice(6)}</span>
         <span>${x.venue || VENUES[x.jcd]} ${x.r}R<small>${x.name}</small></span>
@@ -253,7 +253,7 @@
   const pct = (n) => (n == null ? '—' : n.toFixed(1));
   const posTxt = (p) => (typeof p === 'number' ? p : p ? p.replace(/\d/, '') : '—');
   const KIMS = ['逃げ', '差し', 'まくり', 'まくり差し', '抜き', '恵まれ'];
-  const spanNote = (s) => `<p class="rp-span">集計期間：${ymd(s.histSpan[0])} 〜 ${ymd(s.histSpan[1])}（WAKEが記録しているレース）</p>`;
+  const spanNote = (s) => `<p class="rp-span">集計期間：${ymd(s.histSpan[0])} 〜 ${ymd(s.histSpan[1])}（GACHIIKUが記録しているレース）</p>`;
   const tbl = (head, rows, cls = '') => `<div class="rp-tbl-wrap"><table class="rp-tbl rp-tbl--stat ${cls}">
     <thead><tr>${head.map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></div>`;
 

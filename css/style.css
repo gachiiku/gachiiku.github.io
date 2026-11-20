@@ -919,3 +919,20 @@ a.en__who:hover b { color: var(--navy); text-decoration: underline; }
   .hdr__next + .hdr__clock { margin-left: 8px; font-size: 15px; }
   .hdr__next + .hdr__clock small { display: none; }
 }
+
+/* コース別のレース */
+.seg--course button { padding: 3px 6px; }
+.seg--course .ln { width: 22px; height: 22px; font-size: 13px; }
+.seg--course button.is-on { background: var(--bg-3); }
+.cr-sum { font-size: 13px; color: var(--tx-2); margin-bottom: 8px; }
+.cr-sum b { font-family: var(--num); font-size: 16px; font-weight: 500; color: var(--tx); }
+.cr-wrap { max-height: 520px; overflow-y: auto; }
+.cr-tbl td.cr-v { text-align: left !important; font-family: var(--font); font-size: 13px; white-space: nowrap; }
+.cr-tbl td.cr-v small { display: block; }
+.cr-tbl td.cr-k { font-family: var(--font); font-size: 12px; }
+.cr-tbl td.cr-o { font-size: 13px; color: var(--tx-2); }
+@media (max-width: 600px) {
+  .cr-tbl td.cr-v { font-size: 11px; }
+  .cr-tbl td.cr-k { font-size: 10.5px; }
+  .cr-tbl td.cr-o { font-size: 11px; }
+}

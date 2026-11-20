@@ -184,7 +184,7 @@ def build(no, rs, today):
                                          'from': x['date'], 'to': x['date'], 'runs': []})
         s['to'] = max(s['to'], x['date'])
         s['from'] = min(s['from'], x['date'])
-        s['runs'].append([x['date'], x['day'], x['r'], x['lane'], x['course'], x['st'], x['pos'], x['name']])
+        s['runs'].append([x['date'], x['day'], x['r'], x['lane'], x['course'], x['st'], x['pos'], x['name'], x['strank'], x['kim'], x['order']])
     series = sorted(series.values(), key=lambda s: s['from'], reverse=True)
     for s in series:
         s['runs'].sort(key=lambda r: (r[0], r[2]))

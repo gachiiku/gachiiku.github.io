@@ -276,7 +276,7 @@
   }
 
   // ---------- コース別（期間別成績・ST・勝ち方/負け方・前づけ） ----------
-  const ropt = { metric: 'r1', scope: 'all' };
+  const ropt = { metric: 'r1', scope: 'all', course: '1' };
   const seg = (key, items) => `<div class="seg seg--sm">${items.map(([v, l]) =>
     `<button data-ropt="${key}:${v}" class="${ropt[key] === v ? 'is-on' : ''}">${l}</button>`).join('')}</div>`;
   const C6 = [1, 2, 3, 4, 5, 6];
@@ -309,7 +309,32 @@
       </tbody></table></div>
       <p class="rp-def">安定率＝そのコースの平均STから±0.03以内　抜出率＝内側の艇より0.05以上早い　出遅率＝内側の艇（1コースは2コース）より0.05以上遅い</p></div>`;
 
-    return spanNote(s) + `<div class="rp-stack">${kimCard(s)}${loseCard(s)}${rate}${st}${mae}</div>`;
+    return spanNote(s) + `<div class="rp-stack">${kimCard(s)}${loseCard(s)}${courseRaces(s)}${rate}${st}${mae}</div>`;
+  }
+
+  // コースを選ぶと、そのコースで走った直近1年のレースを一覧（結果・映像つき）
+  function courseRaces(s) {
+    const c = +ropt.course;
+    const rows = s.series.flatMap((x) => x.runs.filter((u) => u[4] === c).map((u) => ({ jcd: x.jcd, grade: x.grade, u })))
+      .sort((a, b) => (b.u[0] + String(b.u[2]).padStart(2, '0')).localeCompare(a.u[0] + String(a.u[2]).padStart(2, '0')));
+    const fin = rows.filter((x) => typeof x.u[6] === 'number');
+    const rate = (k) => (rows.length ? (fin.filter((x) => x.u[6] <= k).length / rows.length * 100).toFixed(1) : '—');
+    const tabs = `<div class="seg seg--sm seg--course">${C6.map((k) =>
+      `<button data-ropt="course:${k}" class="${+ropt.course === k ? 'is-on' : ''}"><span class="ln ln-${k}">${k}</span></button>`).join('')}</div>`;
+    const list = rows.map(({ jcd, grade, u: [d, day, r, lane, , st, pos, name, strank, kim, order] }) => `<tr class="${pos === 1 ? 'is-win' : ''}">
+        <td>${+d.slice(4, 6)}/${+d.slice(6)}</td>
+        <td class="cr-v">${VENUES[jcd]} ${r}R<small>${grade !== '一般' ? grade + '・' : ''}${name}</small></td>
+        <td><span class="ln ln-${lane}">${lane}</span></td>
+        <td>${st == null ? '—' : st < 0 ? 'F' + st2(-st) : st2(st)}<small>${strank ? strank + '位' : ''}</small></td>
+        <td><b>${posTxt(pos)}</b></td>
+        <td class="cr-k">${pos === 1 ? `<span class="k-gain">${kim}</span>` : kim ? `<span class="k-lose">${kim}</span>` : ''}</td>
+        <td class="cr-o">${order ? order.split('').join('-') : ''}</td>
+        <td><button class="vbtn vbtn--sm" data-video="${jcd}-${d}-${r}" aria-label="映像">▶</button></td></tr>`).join('');
+    return `<div class="card"><h4 class="card__h">コース別のレース <small>直近1年・結果と映像</small>${tabs}</h4>
+      <p class="cr-sum">${c}コース <b>${rows.length}</b>走　1着率 <b>${rate(1)}</b>%　2連対率 <b>${rate(2)}</b>%　3連対率 <b>${rate(3)}</b>%</p>
+      ${rows.length ? `<div class="rp-tbl-wrap cr-wrap"><table class="rp-tbl mo-tbl cr-tbl"><thead><tr><th>日付</th><th>レース</th><th>枠</th><th>ST</th><th>着</th><th>決まり手</th><th>3連単</th><th>映像</th></tr></thead>
+      <tbody>${list}</tbody></table></div>` : '<p class="empty">このコースで走ったレースはありません</p>'}
+      <p class="rp-def">決まり手は1着になった艇のもの（<b class="k-gain">青</b>＝自分の勝ち、<b class="k-lose">赤</b>＝負けたときの相手）。</p></div>`;
   }
 
   function kimCard(s) {

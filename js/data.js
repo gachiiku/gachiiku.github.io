@@ -12,7 +12,8 @@
     return Math.round(v * 10) / 10;
   }
 
-  const load = () => fetch('data/today.json', { cache: 'no-store' })
+  // d を渡すとその日の保存データ（data/archive/YYYYMMDD.json）を読む
+  const load = (d) => fetch(d ? `data/archive/${d}.json` : 'data/today.json', { cache: 'no-store' })
     .then((r) => {
       if (!r.ok) throw new Error('data/today.json が見つかりません');
       return r.json();
@@ -25,5 +26,6 @@
     });
 
   window.WAKE_LOAD = load;
-  window.WAKE_READY = load();
+  const q = new URLSearchParams(location.search).get('d');
+  window.WAKE_READY = load(/^\d{8}$/.test(q || '') ? q : null);
 })();

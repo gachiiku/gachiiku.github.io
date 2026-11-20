@@ -615,3 +615,130 @@ a.en__who:hover b { color: var(--navy); text-decoration: underline; }
   .stack { width: 80px; }
 }
 .sec--page { padding-top: 32px; min-height: 60vh; }
+
+/* 選手ページ: タブと成績データ */
+.rp-tabs { display: flex; gap: 0; margin: 4px 0 16px; border-bottom: 2px solid var(--line); overflow-x: auto; scrollbar-width: none; position: sticky; top: -20px; background: var(--bg); z-index: 2; }
+.rp-tabs::-webkit-scrollbar { display: none; }
+.rp-tabs button { flex: none; padding: 10px 18px; font-size: 14px; font-weight: 700; color: var(--tx-3); border-bottom: 3px solid transparent; margin-bottom: -2px; }
+.rp-tabs button:hover { color: var(--tx); }
+.rp-tabs button.is-on { color: var(--navy); border-bottom-color: var(--navy); }
+.rp-span { font-size: 12px; color: var(--tx-3); margin-bottom: 12px; }
+.rp-stack { display: flex; flex-direction: column; gap: 16px; }
+.rp-tbl--stat td { font-size: 14px; padding: 6px 7px; }
+.rp-tbl--stat th { padding: 4px 7px; }
+.rp-tbl--stat tr.is-total td { font-weight: 600; background: var(--bg-2); }
+.rp-tbl--stat td:first-child { font-family: var(--font); font-size: 13px; font-weight: 700; }
+.rp-tbl td.is-same { color: var(--navy); font-weight: 600; }
+.rp-tbl tbody tr:hover td { background: var(--bg-2); }
+
+.rp-fin { list-style: none; }
+.rp-fin li { display: grid; grid-template-columns: 90px minmax(0, 1fr) 56px 48px; gap: 10px; align-items: center; padding: 8px 2px; border-bottom: 1px solid var(--line); font-size: 13px; }
+.rp-fin__d { font-family: var(--num); color: var(--tx-2); }
+.rp-fin__t { min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; }
+.rp-fin__t small { width: 100%; color: var(--tx-3); }
+.rp-fin__l { display: flex; align-items: center; gap: 3px; }
+.rp-fin__l .ln { width: 22px; height: 22px; font-size: 14px; }
+.rp-fin__l small { font-family: var(--num); color: var(--tx-3); }
+.rp-fin b { text-align: right; }
+.rp-fin li.is-win b { color: var(--red); }
+
+.rp-ser { margin-bottom: 12px; }
+.rp-ser .card__h { flex-wrap: wrap; align-items: center; }
+.rp-runs { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 6px; }
+.rp-runs li { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 2px; border: 1px solid var(--line); border-radius: 4px; }
+.rp-runs__d { font-size: 10px; color: var(--tx-3); white-space: nowrap; }
+.rp-runs .ln { width: 22px; height: 22px; font-size: 14px; }
+.rp-runs__st, .rp-runs__c { font-family: var(--num); font-size: 12px; color: var(--tx-2); line-height: 1.2; }
+.rp-runs b { font-family: var(--num); font-size: 20px; font-weight: 500; line-height: 1.1; }
+.rp-runs li.is-win b { color: var(--red); }
+.rp-runs li.is-final { border-color: var(--gold); background: var(--gold-2); }
+@media (max-width: 600px) {
+  .rp-tabs { top: -16px; }
+  .rp-tabs button { padding: 10px 12px; font-size: 13px; }
+  .rp-fin li { grid-template-columns: 74px minmax(0, 1fr) 44px 40px; gap: 6px; }
+  .rp-runs { grid-template-columns: repeat(auto-fill, minmax(54px, 1fr)); }
+}
+
+/* =========================================================
+   レースページ
+   ========================================================= */
+.rc { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+.rc-venues { display: flex; gap: 6px; overflow-x: auto; padding: 14px 0 4px; scrollbar-width: none; }
+.rc-venues::-webkit-scrollbar { display: none; }
+.rc-venues a { flex: none; display: flex; flex-direction: column; align-items: center; min-width: 76px; padding: 6px 10px; border: 1px solid var(--line-2); border-radius: var(--r); line-height: 1.3; }
+.rc-venues a b { font-size: 14px; }
+.rc-venues a small { font-family: var(--num); font-size: 11px; color: var(--tx-3); }
+.rc-venues a:hover { border-color: var(--navy); }
+.rc-venues a.is-on { background: var(--navy); border-color: var(--navy); color: #fff; }
+.rc-venues a.is-on small { color: rgba(255, 255, 255, .75); }
+.rc-head { padding: 14px 0 8px; }
+.rc-title { font-size: 28px; font-weight: 900; line-height: 1.3; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.rc-title span { font-family: var(--num); font-weight: 500; color: var(--navy); }
+.rc-title small { font-size: 14px; color: var(--tx-2); font-weight: 500; }
+.rc-dl { font-style: normal; font-size: 13px; font-weight: 500; color: var(--tx-2); margin-left: auto; font-family: var(--num); }
+.rc-dl i { font-style: normal; color: var(--navy); margin-left: 6px; }
+.rc-dl i.is-hot { color: var(--red); }
+.rc-tabs { padding: 0; margin-bottom: 14px; }
+.rc-tabs a { flex: none; display: flex; flex-direction: column; align-items: center; min-width: 58px; padding: 6px 4px; font-family: var(--num); font-weight: 500; font-size: 16px; border-bottom: 3px solid transparent; line-height: 1.2; }
+.rc-tabs a small { font-size: 10.5px; color: var(--tx-3); font-weight: 400; }
+.rc-tabs a.is-done { color: var(--tx-3); }
+.rc-tabs a:hover { background: var(--bg-2); }
+.rc-tabs a.is-on { color: var(--navy); border-bottom-color: var(--navy); }
+.rc-body { display: flex; flex-direction: column; gap: 12px; }
+
+.rc-scroll { overflow-x: auto; border: 1px solid var(--line-2); border-radius: var(--r); }
+.rc-tbl { width: 100%; min-width: 640px; border-collapse: collapse; table-layout: fixed; }
+.rc-tbl th, .rc-tbl td { border-bottom: 1px solid var(--line); padding: 6px 6px; text-align: center; vertical-align: middle; }
+.rc-tbl td { border-left: 1px solid var(--line); font-family: var(--num); font-size: 16px; line-height: 1.25; }
+.rc-tbl tbody th { width: 104px; text-align: left; font-size: 12px; font-weight: 700; color: var(--tx-2); background: var(--bg-2); line-height: 1.3; }
+.rc-tbl tbody th small { font-weight: 400; color: var(--tx-3); font-size: 10.5px; }
+.rc-tbl thead th { position: sticky; top: 0; background: var(--bg); font-size: 12px; color: var(--tx-3); border-bottom: 1px solid var(--line-2); }
+.rc-tbl thead th:first-child { width: 104px; text-align: left; background: var(--bg-2); }
+.rc-tbl thead .ln { width: 100%; max-width: 72px; height: 26px; }
+.rc-tbl td small { display: block; font-size: 11px; color: var(--tx-3); font-family: var(--num); }
+.rc-tbl td b { font-weight: 500; }
+.rc-tbl td b.is-best { color: var(--red); }
+.rc-tbl td.is-sm { font-size: 14px; }
+.rc-tbl .is-warn { color: var(--red); }
+.rc-tbl tr.rc-sec th { background: var(--navy); color: #fff; font-size: 12.5px; padding: 5px 10px; text-align: left; }
+.rc-tbl tr.rc-sec th small { color: rgba(255, 255, 255, .7); font-weight: 400; margin-left: 8px; }
+.rc-who { vertical-align: top; }
+.rc-name { display: flex; flex-direction: column; align-items: center; font-family: var(--font); }
+.rc-name b { font-size: 14px; font-weight: 700; line-height: 1.3; word-break: keep-all; }
+.rc-name:hover b { color: var(--navy); text-decoration: underline; }
+.rc-tbl .cls { display: inline-block; width: 32px; }
+.rc-grade { margin-top: 2px; }
+.rc-grade .grade { width: 18px; height: 18px; font-size: 11px; border-width: 1px; vertical-align: -4px; }
+.rc-days td { vertical-align: top; padding: 4px; }
+.rc-run { display: inline-flex; flex-direction: column; align-items: center; width: 46px; padding: 2px 0; line-height: 1.15; }
+.rc-run + .rc-run { border-top: 1px dashed var(--line); }
+.rc-run .ln { width: 18px; height: 18px; font-size: 12px; font-style: normal; margin: 1px 0; }
+.rc-run b { font-size: 17px; }
+.rc-run b small { display: inline; margin-left: 1px; }
+.rc-run b.is-win { color: var(--red); }
+.rc-run b.is-in { color: var(--navy); }
+.rc-run.is-now { background: var(--gold-2); border-radius: 3px; }
+.rc-hayami a { font-size: 14px; color: var(--navy); text-decoration: underline; margin: 0 2px; }
+.rc-note { font-size: 11.5px; color: var(--tx-3); }
+
+@media (max-width: 600px) {
+  .rc { padding: 0 12px; }
+  .rc-title { font-size: 22px; }
+  .rc-dl { margin-left: 0; width: 100%; }
+  .rc-tbl { min-width: 0; }
+  .rc-tbl th, .rc-tbl td { padding: 5px 2px; }
+  .rc-tbl td { font-size: 14px; }
+  .rc-tbl tbody th, .rc-tbl thead th:first-child { width: 58px; font-size: 10.5px; padding-left: 4px; }
+  .rc-tbl tbody th small { font-size: 9px; }
+  .rc-tbl thead .ln { height: 22px; font-size: 14px; }
+  .rc-name b { font-size: 12px; }
+  .rc-name small { font-size: 9.5px !important; }
+  .rc-tbl td small { font-size: 9.5px; }
+  .rc-tbl td.is-sm { font-size: 12px; }
+  .rc-tbl .cls { width: 26px; font-size: 10px; }
+  .rc-grade { display: none !important; }
+  .rc-run { width: 100%; }
+  .rc-run b { font-size: 15px; }
+  .rc-tbl tr.rc-sec th small { display: block; margin: 0; }
+  .rc-scroll { margin: 0 -12px; border-radius: 0; border-left: 0; border-right: 0; }
+}

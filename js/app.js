@@ -191,6 +191,9 @@ window.WAKE_READY.then((first) => {
   function openDrawer(vid, rno) {
     const v = venues.find((x) => x.id === +vid);
     if (!v || !v.open) return;
+    // レースはレースページ（race.html）で見せる
+    location.href = `race.html?j=${v.id}${rno ? `&r=${rno}` : ''}`;
+    return;
     cur = { v, r: rno || (v.s.nextRace ? v.s.nextRace.no : 12) };
     $('#drawer').classList.add('is-open');
     $('#drawer').setAttribute('aria-hidden', 'false');

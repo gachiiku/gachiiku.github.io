@@ -114,9 +114,12 @@
     $('#rp-title').textContent = '';
     try {
       await loadIndex().catch(() => null);
-      const res = await fetch(`data/racers/r/${no}.json`);
+      const [res, sres] = await Promise.all([fetch(`data/racers/r/${no}.json`), fetch(`data/racers/s/${no}.json`).catch(() => null)]);
       if (!res.ok) throw new Error('not found');
-      renderRacer(await res.json());
+      const stats = sres && sres.ok ? await sres.json() : null;
+      if (+no !== curNo) rpTab = 'top';
+      curNo = +no;
+      renderRacer(await res.json(), stats);
     } catch (e) {
       $('#rp-body').innerHTML = `<p class="empty">登番 ${no} の選手データが見つかりません。</p>`;
     }
@@ -148,7 +151,8 @@
     return notes.length ? notes : ['目立った特徴はありません'];
   }
 
-  function renderRacer(r) {
+  let rpTab = 'top', curNo = 0;
+  function renderRacer(r, s) {
     const ev = r.eval || {};
     const total = meta ? meta.active : null;
     $('#rp-meta').innerHTML = `登番 ${r.no}・${r.grad}期・${r.branch}支部`;
@@ -213,7 +217,74 @@
         <span class="ln ln-${x.lane}">${x.lane}</span>
         <b>${posLabel(x)}</b></li>`).join('')}</ul>` : '<p class="empty">記録がありません</p>'}</div>`;
 
-    $('#rp-body').innerHTML = head + kpis + `<div class="rp-grid"><div>${evalCard}${histCard}</div><div>${courseCard}${recentCard}</div></div>`;
+    const TABS = [['top', '評価・概要'], ['stats', '成績データ'], ['finals', '優出'], ['races', '全出走']];
+    const tabs = `<div class="rp-tabs" role="tablist">${TABS.map(([k, l]) =>
+      `<button data-rtab="${k}" class="${rpTab === k ? 'is-on' : ''}">${l}</button>`).join('')}</div>`;
+    const top = `<div class="rp-grid"><div>${evalCard}${histCard}</div><div>${courseCard}${recentCard}</div></div>`;
+    const body = rpTab === 'top' ? top : !s ? '<p class="empty">成績データを準備中です。</p>'
+      : rpTab === 'stats' ? statsTab(s) : rpTab === 'finals' ? finalsTab(s) : racesTab(s);
+    $('#rp-body').innerHTML = head + kpis + tabs + `<div class="rp-pane">${body}</div>`;
+    rerender = () => renderRacer(r, s);
+  }
+  let rerender = null;
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-rtab]');
+    if (!b || !rerender) return;
+    rpTab = b.dataset.rtab;
+    const keep = $('#rp-body').scrollTop;
+    rerender();
+    $('#rp-body').scrollTop = Math.min(keep, $('.rp-tabs').offsetTop - 8);
+  });
+
+  // ---------- 成績データ（過去のレース結果から集計） ----------
+  const ymd = (d) => `${d.slice(0, 4)}/${d.slice(4, 6)}/${d.slice(6, 8)}`;
+  const md = (d) => `${+d.slice(4, 6)}/${+d.slice(6, 8)}`;
+  const pct = (n) => (n == null ? '—' : n.toFixed(1));
+  const posTxt = (p) => (typeof p === 'number' ? p : p ? p.replace(/\d/, '') : '—');
+  const KIMS = ['逃げ', '差し', 'まくり', 'まくり差し', '抜き', '恵まれ'];
+  const spanNote = (s) => `<p class="rp-span">集計期間：${ymd(s.histSpan[0])} 〜 ${ymd(s.histSpan[1])}（WAKEが記録しているレース）</p>`;
+  const tbl = (head, rows, cls = '') => `<div class="rp-tbl-wrap"><table class="rp-tbl rp-tbl--stat ${cls}">
+    <thead><tr>${head.map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></div>`;
+
+  function statsTab(s) {
+    const G = ['SG', 'G1', 'G2', 'G3', '一般', '総合'];
+    const grade = tbl(['グレード', '節数', '出走', '勝率', '1着', '1着率', '2連対率', '3連対率', '優出', '優勝', '平均ST', 'ST順', '2着', '3着', '4着', '5着', '6着', 'F', 'L', 'K', 'S'],
+      G.map((g) => { const a = s.grade[g]; return `<tr class="${g === '総合' ? 'is-total' : ''}"><td>${g}</td><td>${a.series}</td><td>${a.n}</td><td>${f2(a.win)}</td><td>${a.w1}</td><td>${pct(a.r1)}</td><td>${pct(a.r2)}</td><td>${pct(a.r3)}</td><td>${a.finals}</td><td class="${a.champs ? 'is-hi' : ''}">${a.champs}</td><td>${st2(a.st)}</td><td>${a.strank ?? '—'}</td>${a.p.slice(1).map((x) => `<td>${x}</td>`).join('')}<td>${a.F}</td><td>${a.L}</td><td>${a.K}</td><td>${a.S}</td></tr>`; }));
+    const lane = tbl(['艇番', '出走', '優出', '優勝', '1着率', '2連対率', '3連対率', '1着', '進入1', '進入2', '進入3', '進入4', '進入5', '進入6', 'その他'],
+      s.lane.map((a, i) => `<tr><td><span class="ln ln-${i + 1}">${i + 1}</span></td><td>${a.n}</td><td>${a.finals}</td><td>${a.champs}</td><td class="${a.r1 >= 40 ? 'is-hi' : ''}">${pct(a.r1)}</td><td>${pct(a.r2)}</td><td>${pct(a.r3)}</td><td>${a.w1}</td>${a.course.map((c, k) => `<td class="${k === i && c ? 'is-same' : ''}">${c}</td>`).join('')}</tr>`));
+    const course = tbl(['コース', '出走', '1着', '1着率', '2連対率', '3連対率', '平均ST', 'ST順', ...KIMS],
+      s.course.map((a, i) => `<tr><td><span class="ln ln-${i + 1}">${i + 1}</span></td><td>${a.n}</td><td>${a.w1}</td><td class="${a.r1 >= 40 ? 'is-hi' : ''}">${pct(a.r1)}</td><td>${pct(a.r2)}</td><td>${pct(a.r3)}</td><td>${st2(a.st)}</td><td>${a.strank ?? '—'}</td>${a.kim.map((k) => `<td>${k || ''}</td>`).join('')}</tr>`));
+    const vs = Object.entries(s.venue).sort((a, b) => a[0] - b[0]);
+    const venue = tbl(['競艇場', '節数', '出走', '優出', '優勝', '勝率', '1着', '1着率', '2連対率', '3連対率', '平均ST'],
+      vs.map(([j, a]) => `<tr><td>${VENUES[j]}</td><td>${a.series}</td><td>${a.n}</td><td>${a.finals}</td><td class="${a.champs ? 'is-hi' : ''}">${a.champs}</td><td>${f2(a.win)}</td><td>${a.w1}</td><td>${pct(a.r1)}</td><td>${pct(a.r2)}</td><td>${pct(a.r3)}</td><td>${st2(a.st)}</td></tr>`));
+    return spanNote(s) + `<div class="rp-stack">
+      <div class="card"><h4 class="card__h">グレード別成績</h4>${grade}</div>
+      <div class="card"><h4 class="card__h">艇番別成績 <small>枠番ごとの成績と、実際に入ったコース</small></h4>${lane}</div>
+      <div class="card"><h4 class="card__h">進入コース別成績 <small>決まり手は1着になったときの数</small></h4>${course}</div>
+      <div class="card"><h4 class="card__h">競艇場別成績</h4>${venue}</div></div>`;
+  }
+
+  function finalsTab(s) {
+    if (!s.finals.length) return spanNote(s) + '<p class="empty">集計期間内の優出はありません</p>';
+    return spanNote(s) + `<div class="card"><h4 class="card__h">優出データ <small>${s.finals.length}回・優勝${s.finals.filter((f) => f[7] === 1).length}回</small></h4>
+      <ul class="rp-fin">${s.finals.map(([d, j, title, g, r, lane, c, pos]) => `<li class="${pos === 1 ? 'is-win' : ''}">
+        <span class="rp-fin__d">${ymd(d)}</span>
+        <span class="rp-fin__t"><span class="tag tag--g ${g === 'SG' || g === 'G1' ? 'is-big' : ''}">${g}</span>${title}<small>${VENUES[j]} ${r}R</small></span>
+        <span class="rp-fin__l"><span class="ln ln-${lane}">${lane}</span><small>${c ? `(${c})` : ''}</small></span>
+        <b>${pos === 1 ? '優勝' : posTxt(pos) + (typeof pos === 'number' ? '着' : '')}</b></li>`).join('')}</ul></div>`;
+  }
+
+  function racesTab(s) {
+    if (!s.series.length) return spanNote(s) + '<p class="empty">直近12ヵ月の出走はありません</p>';
+    return `<p class="rp-span">直近12ヵ月の全出走（上から 艇番・ST・(進入)・着順）</p>` + s.series.map((x) => `
+      <div class="card rp-ser"><h4 class="card__h"><span class="tag tag--g ${x.grade === 'SG' || x.grade === 'G1' ? 'is-big' : ''}">${x.grade}</span>${x.title}
+        <small>${VENUES[x.jcd]}・${md(x.from)}〜${md(x.to)}</small></h4>
+        <ol class="rp-runs">${x.runs.map(([d, day, r, lane, c, st, pos, name]) => `<li class="${pos === 1 ? 'is-win' : ''} ${name.includes('優勝戦') && !name.includes('準') ? 'is-final' : ''}" title="${name}">
+          <span class="rp-runs__d">${md(d)} ${r}R</span>
+          <span class="ln ln-${lane}">${lane}</span>
+          <span class="rp-runs__st">${st == null ? '—' : st < 0 ? 'F' + st2(-st) : st2(st)}</span>
+          <span class="rp-runs__c">${c ? `(${c})` : ''}</span>
+          <b>${posTxt(pos)}</b></li>`).join('')}</ol></div>`).join('');
   }
 
   // ---------- 画面遷移（URLの #r/登番 で選手ページを開く） ----------

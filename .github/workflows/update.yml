@@ -39,15 +39,31 @@ jobs:
         if: github.event_name != 'push'
         run: python -u scripts/fetch_today.py
 
-      - name: 選手データ更新（1日1回）
+      - name: 過去のレース結果を追加（前日分）
         if: github.event_name != 'push'
         run: |
-          if grep -q "\"updatedAt\":\"$(date +%Y-%m-%d)" data/racers/index.json 2>/dev/null; then
-            echo '本日分は更新済み'
-          else
-            command -v bsdtar || sudo apt-get install -y -qq libarchive-tools
-            python -u scripts/fetch_racers.py
-          fi
+          Y=$(date -d yesterday +%Y); D=$(date -d yesterday +%Y%m%d)
+          if [ -f "data/hist/$Y/$D.json.gz" ]; then echo '前日分は取得済み'; exit 0; fi
+          command -v bsdtar || sudo apt-get install -y -qq libarchive-tools
+          python -u scripts/fetch_history.py
+
+      - name: 選手データの鍵（過去データの最終日＋今日）
+        id: key
+        run: echo "key=racers-$(ls data/hist/*/ | sort | tail -1 | cut -c1-8)-$(date +%Y%m%d)" >> "$GITHUB_OUTPUT"
+
+      - name: 選手データを復元
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: data/racers
+          key: ${{ steps.key.outputs.key }}
+
+      - name: 選手データを作る（1日1回・成績データの集計）
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          command -v bsdtar || sudo apt-get install -y -qq libarchive-tools
+          python -u scripts/fetch_racers.py
+          python -u scripts/build_stats.py
 
       - name: 取得したデータを保存
         if: github.event_name != 'push'
@@ -63,7 +79,8 @@ jobs:
       - name: 公開用ファイルをまとめる
         run: |
           mkdir -p _site
-          cp -r index.html players.html css js data _site/
+          cp -r index.html players.html race.html css js data _site/
+          rm -rf _site/data/hist
           rm -f _site/data/.fetch.lock
 
       - uses: actions/upload-pages-artifact@v3

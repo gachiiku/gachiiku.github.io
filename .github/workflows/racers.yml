@@ -1,0 +1,47 @@
+# 選手データ（期別成績・成績データ）を作り、キャッシュに保存する。
+#   1日1回、前日の結果が過去データに加わったときに loop.yml から起動される。
+#   公開（update.yml）はこのキャッシュを使うだけなので、毎回の公開が速い。
+name: 選手データ作成
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: racers
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      TZ: Asia/Tokyo
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 選手データを作る
+        run: |
+          command -v bsdtar || sudo apt-get install -y -qq libarchive-tools
+          python -u scripts/fetch_racers.py
+          python -u scripts/build_stats.py
+
+      - name: 鍵（作った日時）
+        id: key
+        run: echo "key=racers-$(date +%Y%m%d%H%M)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache/save@v4
+        with:
+          path: data/racers
+          key: ${{ steps.key.outputs.key }}
+
+      - name: サイトを公開し直す
+        run: gh workflow run update.yml --ref main

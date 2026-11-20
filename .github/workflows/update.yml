@@ -33,19 +33,16 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: 選手データの鍵（過去データの最終日＋今日）
-        id: key
-        run: echo "key=racers-$(ls data/hist/*/*.json.gz | sort | tail -1 | xargs basename | cut -c1-8)-$(ls data/hist/*/* | wc -l | tr -d " ")-$(date +%Y%m%d)" >> "$GITHUB_OUTPUT"
-
-      - name: 選手データを復元
+      - name: 選手データを復元（racers.yml が作った一番新しいもの）
         id: cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: data/racers
-          key: ${{ steps.key.outputs.key }}
+          key: racers-latest
+          restore-keys: racers-
 
-      - name: 選手データを作る（1日1回・成績データの集計）
-        if: steps.cache.outputs.cache-hit != 'true'
+      - name: 選手データがまだ無いときだけ作る
+        if: steps.cache.outputs.cache-matched-key == ''
         run: |
           command -v bsdtar || sudo apt-get install -y -qq libarchive-tools
           python -u scripts/fetch_racers.py

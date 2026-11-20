@@ -9,6 +9,7 @@ git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
 
 while [ "$(date +%s)" -lt "$END" ]; do
   START=$(date +%s)
+  NEW_HIST=0
   H=$((10#$(date +%H)))
   if [ "$H" -ge 8 ]; then
     echo "=== $(date '+%Y-%m-%d %H:%M:%S')"
@@ -18,6 +19,7 @@ while [ "$(date +%s)" -lt "$END" ]; do
     D=$(date -d yesterday +%Y%m%d)
     if [ ! -f "data/hist/$Y/$D.json.gz" ]; then
       python -u scripts/fetch_history.py || echo 'fetch_history 失敗（次の回に再挑戦）'
+      NEW_HIST=1
     fi
     git add data
     if ! git diff --cached --quiet; then
@@ -27,6 +29,10 @@ while [ "$(date +%s)" -lt "$END" ]; do
         sleep 5
       done
       gh workflow run update.yml --ref main || echo '公開の起動に失敗'
+      # 前日の結果が加わったら、選手データを作り直す（1日1回）
+      if [ "${NEW_HIST:-0}" = 1 ] && [ -f "data/hist/$Y/$D.json.gz" ]; then
+        gh workflow run racers.yml --ref main || echo '選手データ作成の起動に失敗'
+      fi
     else
       echo '変更なし'
     fi

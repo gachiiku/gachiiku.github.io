@@ -1,0 +1,64 @@
+# 公式サイトからデータを取得し、GitHub Pages に公開する。
+#   ・8:00〜23:59（日本時間）の間、10分おきに自動実行
+#   ・コードを push したときと、手動実行（Actions 画面の Run workflow）でも動く
+name: データ更新と公開
+
+on:
+  schedule:
+    - cron: '*/10 23,0-14 * * *'   # UTC表記。日本時間 8:00〜23:59
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write   # 取得したデータを main に保存する
+  pages: write
+  id-token: write
+
+concurrency:
+  group: update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    env:
+      TZ: Asia/Tokyo
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: データ取得（その日の初回は全件、以降は結果・直前情報だけ）
+        if: github.event_name != 'push'
+        run: python -u scripts/fetch_today.py
+
+      - name: 取得したデータを保存
+        if: github.event_name != 'push'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data
+          if git diff --cached --quiet; then echo '変更なし'; exit 0; fi
+          git commit -m "data: $(date '+%Y-%m-%d %H:%M')"
+          git pull --rebase -X theirs origin main
+          git push
+
+      - name: 公開用ファイルをまとめる
+        run: |
+          mkdir -p _site
+          cp -r index.html css js data _site/
+          rm -f _site/data/.fetch.lock
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - id: deploy
+        uses: actions/deploy-pages@v4

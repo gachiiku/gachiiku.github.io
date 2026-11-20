@@ -1,0 +1,6 @@
+.DS_Store
+data/.fetch.lock
+data/*.tmp
+_site/
+__pycache__/
+.claude/

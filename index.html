@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#12305f">
+  <meta name="apple-mobile-web-app-title" content="WAKE">
+  <meta name="format-detection" content="telephone=no">
+  <title>WAKE｜ボートレースのデータ・出走表</title>
+  <meta name="description" content="全24場の出走表・展示・場傾向をまとめて確認できるボートレースのデータサイト。">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css?v=20261120">
+</head>
+<body>
+  <!-- ===== Header ===== -->
+  <header class="hdr">
+    <div class="hdr__inner">
+      <a class="logo" href="#top" aria-label="WAKE トップ">
+        <span class="logo__mark">W</span>
+        <span class="logo__txt">WAKE<small>ボートレース データ</small></span>
+      </a>
+      <nav class="nav" aria-label="メイン">
+        <a href="#venues" class="is-active">出走表</a>
+        <a href="#ranking">場傾向</a>
+        <a href="#finder">レース検索</a>
+        <a href="#players">選手</a>
+        <a href="#motors">モーター</a>
+      </nav>
+      <div class="hdr__clock" id="clock">--:--</div>
+    </div>
+  </header>
+
+  <!-- 締切ティッカー -->
+  <div class="ticker" aria-label="締切が近いレース">
+    <div class="ticker__label">締切間近</div>
+    <div class="ticker__track"><div class="ticker__move" id="ticker"></div></div>
+  </div>
+
+  <main id="top">
+    <!-- ===== 本日のまとめ ===== -->
+    <section class="summary">
+      <div class="summary__inner">
+        <h1 class="summary__date" id="today-label"></h1>
+        <dl class="kpis" id="kpis"></dl>
+      </div>
+    </section>
+
+    <!-- ===== 本日の開催場 ===== -->
+    <section class="sec" id="venues">
+      <div class="sec__head">
+        <h2 class="sec__title">本日の開催場</h2>
+        <div class="seg" role="tablist" id="venue-filter">
+          <button class="is-on" data-f="all">全場</button>
+          <button data-f="live">開催中</button>
+          <button data-f="night">ナイター</button>
+          <button data-f="done">終了</button>
+        </div>
+      </div>
+      <div class="venues" id="venue-grid"></div>
+    </section>
+
+    <!-- ===== 場傾向ランキング ===== -->
+    <section class="sec" id="ranking">
+      <div class="sec__head">
+        <h2 class="sec__title">本日の場傾向</h2>
+        <p class="sec__note">確定したレースから集計</p>
+      </div>
+      <div class="ranks" id="ranks"></div>
+    </section>
+
+    <!-- ===== レース検索 ===== -->
+    <section class="sec" id="finder">
+      <div class="sec__head">
+        <h2 class="sec__title">条件でレースを探す</h2>
+        <p class="sec__note">当日のレースのみ</p>
+      </div>
+      <div class="finder">
+        <div class="finder__tabs" role="tablist" id="finder-tabs">
+          <button class="is-on" data-mode="solid"><b>ガチガチ</b><span>1号艇が堅い</span></button>
+          <button data-mode="upset"><b>穴レース</b><span>イン崩れ狙い</span></button>
+          <button data-mode="makuri"><b>まくりアラート</b><span>展示で外が速い</span></button>
+          <button data-mode="st"><b>ST差</b><span>スタート力の差</span></button>
+        </div>
+        <div class="finder__body">
+          <div class="finder__cond" id="finder-cond"></div>
+          <div class="finder__result">
+            <div class="finder__count"><span id="finder-count">0</span> レース該当</div>
+            <ul class="hits" id="finder-hits"></ul>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="ftr">
+    <div class="ftr__inner">
+      <div class="logo"><span class="logo__mark">W</span><span class="logo__txt">WAKE<small>ボートレース データ</small></span></div>
+      <nav class="ftr__nav">
+        <a href="#venues">出走表</a><a href="#ranking">場傾向</a><a href="#finder">レース検索</a>
+        <a href="#">利用規約</a><a href="#">プライバシーポリシー</a><a href="#">お問い合わせ</a>
+      </nav>
+      <p class="ftr__note">※ 出走表・結果データの出典：BOAT RACE オフィシャルウェブサイト。予想指数は参考値です。舟券の購入は20歳になってから。</p>
+    </div>
+  </footer>
+
+  <!-- ===== スマホ用 下部タブ ===== -->
+  <nav class="tabbar" aria-label="メニュー">
+    <a href="#venues" class="is-active">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg><span>出走表</span></a>
+    <a href="#ranking">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V11M12 20V5M19 20v-6"/></svg><span>場傾向</span></a>
+    <a href="#finder">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></svg><span>検索</span></a>
+    <a href="#players">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4.5-6 8-6s7 2 8 6"/></svg><span>選手</span></a>
+  </nav>
+
+  <!-- ===== レース詳細ドロワー ===== -->
+  <div class="drawer" id="drawer" aria-hidden="true">
+    <div class="drawer__scrim" data-close></div>
+    <aside class="drawer__panel" role="dialog" aria-modal="true" aria-labelledby="dr-title">
+      <header class="drawer__head">
+        <div>
+          <p class="drawer__meta" id="dr-meta"></p>
+          <h3 class="drawer__title" id="dr-title"></h3>
+        </div>
+        <button class="drawer__close" data-close aria-label="閉じる">✕</button>
+      </header>
+      <div class="race-tabs" id="race-tabs"></div>
+      <div class="drawer__body" id="dr-body"></div>
+      <div class="race-pager" id="race-pager"></div>
+    </aside>
+  </div>
+
+  <script src="js/data.js?v=20261120"></script>
+  <script src="js/app.js?v=20261120"></script>
+</body>
+</html>

@@ -93,8 +93,18 @@ window.WAKE_READY.then((first) => {
   const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   function mevCell(jcd, motorNo, k) {
     const e = mev[`${jcd}-${motorNo}`];
-    const g = e && e[k];
-    return g ? `<span class="mgrade mgrade--${g}">${g}</span>` : '<small>未評価</small>';
+    const n = e && +e[k];
+    return n >= 1 && n <= 5 ? `<span class="mnum mnum--${n}"><b>${n}</b><i style="--w:${n * 20}%"></i></span>` : '<small>未評価</small>';
+  }
+  // 総合: 3項目の平均 → S/A/B/C/E
+  function mevTotal(jcd, motorNo) {
+    const e = mev[`${jcd}-${motorNo}`];
+    if (!e) return '<small>未評価</small>';
+    const xs = MEV_AXES.map(([k]) => +e[k]).filter((x) => x >= 1 && x <= 5);
+    if (!xs.length) return '<small>未評価</small>';
+    const a = xs.reduce((p, q) => p + q, 0) / xs.length;
+    const g = a >= 4.5 ? 'S' : a >= 3.5 ? 'A' : a >= 2.5 ? 'B' : a >= 1.5 ? 'C' : 'E';
+    return `<span class="mgrade mgrade--${g}">${g}</span>`;
   }
 
   // ---------- 本体 ----------
@@ -200,7 +210,8 @@ window.WAKE_READY.then((first) => {
         ${row('当地<br><small>勝率 / 2連率</small>', ({ b }) => (b.local ? `${num(b.local, f2, bestLoc)}<small>${f1(b.local2)}%</small>` : '—'))}
         ${row('モーター<br><small>No / 2連率</small>', ({ b }) => `<small>#${b.motorNo}</small>${num(b.motor2, f1, bestMot)}`)}
         ${sec('モーター評価', 'WAKE独自の評価')}
-        ${MEV_AXES.map(([k, l]) => row(l, ({ b }) => mevCell(v.id, b.motorNo, k))).join('')}
+        ${row('総合', ({ b }) => mevTotal(v.id, b.motorNo))}
+        ${MEV_AXES.map(([k, l]) => row(`${l}<br><small>5点満点</small>`, ({ b }) => mevCell(v.id, b.motorNo, k))).join('')}
         ${boats.some(({ b }) => (mev[`${v.id}-${b.motorNo}`] || {}).memo) ? row('メモ', ({ b }) => `<span class="mev-memo">${esc((mev[`${v.id}-${b.motorNo}`] || {}).memo || '')}</span>`, 'is-memo') : ''}
         ${row('ボート<br><small>No / 2連率</small>', ({ b }) => `<small>#${b.boatNo}</small>${f1(b.boat2)}`)}
         ${row('展示<br><small>タイム / チルト</small>', ({ b }) => (b.exTime ? `${num(b.exTime, f2, bestEx)}<small>${b.tilt ?? ''}</small>` : '—'))}

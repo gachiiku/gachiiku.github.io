@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=20261120h">
+  <link rel="stylesheet" href="css/style.css?v=20261120i">
   <style>
     .ad { max-width: 960px; margin: 0 auto; padding: 24px 24px 120px; }
     .ad h1 { font-size: 22px; font-weight: 900; margin-bottom: 4px; }
@@ -38,9 +38,8 @@
     .gsel button { width: 30px; height: 30px; font-family: var(--num); font-size: 15px; border-left: 1px solid var(--line-2); color: var(--tx-2); }
     .gsel button:first-child { border-left: 0; }
     .gsel button.is-on { color: #fff; }
-    .gsel button.is-on[data-g=S] { background: var(--gold); } .gsel button.is-on[data-g=A] { background: var(--red); }
-    .gsel button.is-on[data-g=B] { background: var(--navy); } .gsel button.is-on[data-g=C] { background: #6c7a91; }
-    .gsel button.is-on[data-g=E] { background: #9aa1ab; }
+    .gsel button.is-on { background: var(--navy); }
+    .gsel button.is-on[data-g="5"] { background: var(--red); } .gsel button.is-on[data-g="1"] { background: #9aa1ab; }
     .mt input.memo { width: 100%; min-width: 140px; }
     .mt tr.is-dirty td { background: var(--gold-2); }
     .ad-bar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--bg); border-top: 1px solid var(--line-2); padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); display: flex; gap: 12px; align-items: center; justify-content: flex-end; z-index: 30; }
@@ -50,7 +49,7 @@
       .mt thead { display: none; }
       .mt tr { display: grid; grid-template-columns: 54px 1fr; gap: 4px 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
       .mt td { border: 0; padding: 0; }
-      .mt td.mt__no { grid-row: span 5; }
+      .mt td.mt__no { grid-row: span 6; }
       .mt td[data-l]::before { content: attr(data-l); display: inline-block; width: 52px; font-size: 11px; color: var(--tx-3); }
     }
   </style>
@@ -62,7 +61,7 @@
 
   <main class="ad">
     <h1>モーター評価の入力</h1>
-    <p class="ad__lead">伸び足・行き足・出足を S〜E の5段階で付けて「保存」すると、1〜3分でサイトのレースページに反映されます。評価は「場 × モーター番号」ごとに保存され、そのモーターが出るすべてのレースに表示されます。</p>
+    <p class="ad__lead">伸び足・行き足・出足を 1〜5 の数字で付けて「保存」すると、1〜3分でサイトのレースページに反映されます。評価は「場 × モーター番号」ごとに保存され、そのモーターが出るすべてのレースに表示されます。</p>
 
     <section class="ad-box" id="tokbox">
       <h2>① 書き込み用の鍵（最初の1回だけ）</h2>
@@ -97,9 +96,9 @@
     </section>
 
     <section class="ad-box">
-      <h2>③ 評価を付ける <small style="font-weight:400;color:var(--tx-3)">S=5点・A=4点・B=3点・C=2点・E=1点</small></h2>
+      <h2>③ 評価を付ける <small style="font-weight:400;color:var(--tx-3)">各5点満点。総合は3つの平均から自動で S・A・B・C・E</small></h2>
       <table class="mt">
-        <thead><tr><th>No</th><th>今日の選手</th><th>伸び足</th><th>行き足</th><th>出足</th><th>メモ</th></tr></thead>
+        <thead><tr><th>No</th><th>今日の選手</th><th>伸び足</th><th>行き足</th><th>出足</th><th>総合</th><th>メモ</th></tr></thead>
         <tbody id="rows"></tbody>
       </table>
     </section>
@@ -112,7 +111,14 @@
     const REPO = 'harutos7428-alt/wake';
     const PATH = 'data/motor_eval.json';
     const API = `https://api.github.com/repos/${REPO}/contents/${PATH}`;
-    const GRADES = ['S', 'A', 'B', 'C', 'E'];
+    const GRADES = ['1', '2', '3', '4', '5'];
+    // 総合: 3項目の平均 → S/A/B/C/E（レースページと同じ計算）
+    function total(e) {
+      const xs = ['nobi', 'iki', 'de'].map((k) => +e[k]).filter((x) => x >= 1 && x <= 5);
+      if (!xs.length) return '';
+      const a = xs.reduce((p, q) => p + q, 0) / xs.length;
+      return a >= 4.5 ? 'S' : a >= 3.5 ? 'A' : a >= 2.5 ? 'B' : a >= 1.5 ? 'C' : 'E';
+    }
     const AXES = [['nobi', '伸び足'], ['iki', '行き足'], ['de', '出足']];
     const VENUES = ['', '桐生', '戸田', '江戸川', '平和島', '多摩川', '浜名湖', '蒲郡', '常滑', '津', '三国', 'びわこ', '住之江',
       '尼崎', '鳴門', '丸亀', '児島', '宮島', '徳山', '下関', '若松', '芦屋', '福岡', '唐津', '大村'];
@@ -179,10 +185,11 @@
           <td class="mt__no">${m.no}</td>
           <td class="mt__who">${m.who.length ? esc(m.who[0]) + (m.who.length > 1 ? `<small>ほか${m.who.length - 1}レース</small>` : '') : '<small>今日は出走なし</small>'}${m.m2 != null ? `<small>2連率 ${m.m2}%</small>` : ''}</td>
           ${AXES.map(([k, l]) => `<td data-l="${l}"><span class="gsel" data-k="${k}">${GRADES.map((g) =>
-            `<button data-g="${g}" class="${e[k] === g ? 'is-on' : ''}" title="${l} ${g}">${g}</button>`).join('')}</span></td>`).join('')}
+            `<button data-g="${g}" class="${String(e[k] || '') === g ? 'is-on' : ''}" title="${l} ${g}点">${g}</button>`).join('')}</span></td>`).join('')}
+          <td data-l="総合"><span class="mtot mgrade mgrade--${total(e) || 'x'}">${total(e) || '—'}</span></td>
           <td data-l="メモ"><input class="memo" type="text" maxlength="60" value="${esc(e.memo || '')}" placeholder="例：伸び強め・回り足は普通"></td>
         </tr>`;
-      }).join('') || '<tr><td colspan="6" class="empty">この場のモーターがありません。番号を指定して追加してください。</td></tr>';
+      }).join('') || '<tr><td colspan="7" class="empty">この場のモーターがありません。番号を指定して追加してください。</td></tr>';
       updateBar();
     }
     function updateBar() {
@@ -205,7 +212,9 @@
       if (b) {
         const key = b.closest('tr').dataset.key, k = b.closest('.gsel').dataset.k, g = b.dataset.g;
         edit(key, (x) => { x[k] = x[k] === g ? '' : g; }); // 同じものをもう一度押すと取り消し
-        b.closest('.gsel').querySelectorAll('button').forEach((y) => y.classList.toggle('is-on', y.dataset.g === (draft[key][k] || '')));
+        b.closest('.gsel').querySelectorAll('button').forEach((y) => y.classList.toggle('is-on', y.dataset.g === String(draft[key][k] || '')));
+        const t = total(draft[key]), tot = b.closest('tr').querySelector('.mtot');
+        tot.className = `mtot mgrade mgrade--${t || 'x'}`; tot.textContent = t || '—';
       }
     });
     document.addEventListener('input', (e) => {
@@ -249,7 +258,8 @@
         const now = new Date();
         const at = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
         Object.entries(draft).forEach(([key, e]) => {
-          const clean = { nobi: e.nobi || '', iki: e.iki || '', de: e.de || '', memo: e.memo || '', at };
+          const n = (x) => (+x >= 1 && +x <= 5 ? +x : 0);
+          const clean = { nobi: n(e.nobi), iki: n(e.iki), de: n(e.de), memo: e.memo || '', at };
           if (!clean.nobi && !clean.iki && !clean.de && !clean.memo) delete motors[key];
           else motors[key] = clean;
         });

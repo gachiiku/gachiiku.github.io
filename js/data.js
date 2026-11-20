@@ -26,6 +26,37 @@
     });
 
   window.WAKE_LOAD = load;
-  const q = new URLSearchParams(location.search).get('d');
-  window.WAKE_READY = load(/^\d{8}$/.test(q || '') ? q : null);
+
+  // 表示する日を決める
+  //   ?d=YYYYMMDD … その日（保存データ）
+  //   ?today=1    … 今日（全レースが終わっていても今日のまま）
+  //   指定なし    … 今日。ただし全場のレースが終わっていて明日の出走表があれば明日
+  const params = new URLSearchParams(location.search);
+  const q = params.get('d');
+  const pad = (n) => String(n).padStart(2, '0');
+  const t = new Date();
+  const realToday = `${t.getFullYear()}${pad(t.getMonth() + 1)}${pad(t.getDate())}`;
+  async function ready() {
+    const days = await fetch('data/days.json', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : { dates: [] })).catch(() => ({ dates: [] }));
+    const view = { days: days.dates || [], today: realToday, auto: false, live: false };
+    if (/^\d{8}$/.test(q || '')) {
+      const d = await load(q);
+      view.live = false;
+      return Object.assign(d, { view });
+    }
+    const d = await load(null);
+    view.today = d.date || realToday;
+    const races = d.venues.filter((v) => v.open).flatMap((v) => v.races);
+    const allDone = races.length > 0 && races.every((r) => r.result);
+    const next = view.days.find((x) => x > d.date);
+    const home = !!document.getElementById('venue-grid');  // 明日への自動切り替えはホームだけ
+    if (home && !params.has('today') && allDone && next) {
+      const n = await load(next);
+      view.auto = true;
+      return Object.assign(n, { view });
+    }
+    view.live = true;
+    return Object.assign(d, { view });
+  }
+  window.WAKE_READY = ready();
 })();

@@ -5,7 +5,7 @@ data/today.json に書き出す。標準ライブラリのみで動く。
 
   python3 scripts/fetch_today.py            # 今日（2回目以降は結果・直前情報だけ差分更新）
   python3 scripts/fetch_today.py --full     # 出走表から取り直す
-  python3 scripts/fetch_today.py 20261026   # 日付指定
+  python3 scripts/fetch_today.py 20261026   # 日付指定（明日以降の日付なら出走表だけ取り、data/archive に置く）
 
 公式サイトに負荷をかけないよう、リクエストごとに待ち時間を入れている。
 """
@@ -199,7 +199,8 @@ def main():
     hd = args[0] if args else datetime.now().strftime('%Y%m%d')
     now = datetime.now()
     now_min = now.hour * 60 + now.minute if hd == now.strftime('%Y%m%d') else 24 * 60
-    prev = load_previous(hd)
+    future = hd > now.strftime('%Y%m%d')
+    prev = None if future else load_previous(hd)
     if prev and '--full' not in sys.argv:
         # 差分更新: 出走表は1日変わらないので、結果と直前情報だけ取り直す
         print(f'[{hd}] 差分更新（結果・直前情報）')
@@ -216,14 +217,27 @@ def main():
             if jcd in held:
                 v.update(held[jcd])
                 fetch_racelists(v, hd)
-                update_live(v, hd, now_min)
+                if not future:  # 明日以降はまだ結果も直前情報もない
+                    update_live(v, hd, now_min)
             venues.append(v)
 
     data = {'date': hd, 'updatedAt': datetime.now().strftime('%Y-%m-%d %H:%M'), 'venues': venues}
-    save(data)
+    save(data, main_file=not future)
 
 
 def load_previous(hd):
+    """同じ日の保存済みデータ（今日のファイル、なければ前の晩に取った控え）"""
+    for p in (OUT, OUT.parent / 'archive' / f'{hd}.json'):
+        try:
+            data = json.loads(p.read_text(encoding='utf-8'))
+        except Exception:
+            continue
+        if data.get('date') == hd and data.get('venues'):
+            return data
+    return None
+
+
+def _unused_load_previous(hd):
     """同じ日付の today.json があれば返す"""
     try:
         data = json.loads(OUT.read_text(encoding='utf-8'))
@@ -276,18 +290,38 @@ def update_live(v, hd, now_min):
     print(f'  {v["name"]}: 結果 {done}/{len(v["races"])}R' + (f' 直前 {upcoming[0]["no"]}R' if upcoming else ''), flush=True)
 
 
-def save(data):
+def save(data, main_file=True):
     """書きかけのファイルを画面が読まないよう、一時ファイルに書いてから置き換える"""
     body = json.dumps(data, ensure_ascii=False, separators=(',', ':'))
     OUT.parent.mkdir(exist_ok=True)
-    tmp = OUT.with_suffix('.tmp')
-    tmp.write_text(body, encoding='utf-8')
-    tmp.replace(OUT)
-    # 日付ごとの控え(過去データの分析用)
+    if main_file:
+        tmp = OUT.with_suffix('.tmp')
+        tmp.write_text(body, encoding='utf-8')
+        tmp.replace(OUT)
+    # 日付ごとの控え（ホームの日付切り替え・過去データの分析用）
     archive = OUT.parent / 'archive' / f'{data["date"]}.json'
     archive.parent.mkdir(exist_ok=True)
-    archive.write_text(body, encoding='utf-8')
-    print(f'書き出し: {OUT} ({OUT.stat().st_size // 1024}KB) {data["updatedAt"]}')
+    tmp = archive.with_suffix('.tmp')
+    tmp.write_text(body, encoding='utf-8')
+    tmp.replace(archive)
+    write_days()
+    print(f'書き出し: {OUT if main_file else archive} ({len(body) // 1024}KB) {data["updatedAt"]}')
+
+
+def write_days():
+    """見られる日付の一覧（data/days.json）"""
+    dates = sorted(p.stem for p in (OUT.parent / 'archive').glob('*.json') if p.stem.isdigit())
+    (OUT.parent / 'days.json').write_text(json.dumps({'dates': dates}), encoding='utf-8')
+
+
+def all_done(path=OUT):
+    """その日の全場の全レースが確定（中止含む）したか"""
+    try:
+        d = json.loads(path.read_text(encoding='utf-8'))
+    except Exception:
+        return False
+    races = [r for v in d['venues'] if v['open'] for r in v['races']]
+    return bool(races) and all(r.get('result') for r in races)
 
 
 if __name__ == '__main__':

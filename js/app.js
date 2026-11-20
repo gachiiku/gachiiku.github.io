@@ -3,6 +3,9 @@
    ========================================================= */
 window.WAKE_READY.then((first) => {
   let { venues, date, updatedAt } = first;
+  const view = first.view || { live: true, days: [], today: date };
+  const live = view.live;
+  const dq = live ? '' : `&d=${date}`;  // レースページへ渡す日付
   const $ = (s, el = document) => el.querySelector(s);
   const $$ = (s, el = document) => [...el.querySelectorAll(s)];
   const pad = (n) => String(n).padStart(2, '0');
@@ -42,6 +45,7 @@ window.WAKE_READY.then((first) => {
     $('#clock').innerHTML = `<small>現在</small>${pad(d.getHours())}:${pad(d.getMinutes())}`;
     const t = nowSec();
     $$('[data-deadline]').forEach((el) => {
+      if (!live) { el.textContent = ''; return; }  // 今日以外はカウントダウンしない
       const left = +el.dataset.deadline * 60 - t;
       el.textContent = fmtLeft(left);
       el.classList.toggle('is-hot', left > 0 && left < 300);
@@ -55,13 +59,35 @@ window.WAKE_READY.then((first) => {
       .map((v) => `<span class="tk"><b>${v.name}</b> ${v.s.nextRace.no}R <i data-deadline="${v.s.nextRace.deadline}"></i></span>`)
       .join('');
     $('#ticker').innerHTML = items + items; // ループ用に2回
+    document.querySelector('.ticker').style.display = !live || !items ? 'none' : '';
+  }
+
+  // ---- 日付の切り替え
+  const md = (x) => { const t = new Date(+x.slice(0, 4), +x.slice(4, 6) - 1, +x.slice(6, 8)); return `${t.getMonth() + 1}/${t.getDate()}（${'日月火水木金土'[t.getDay()]}）`; };
+  const dayName = (x) => (x === view.today ? '今日' : x > view.today ? (x === view.days.find((y) => y > view.today) ? '明日' : '') : '');
+  const hrefOf = (x) => (x === view.today ? '?today=1' : `?d=${x}`);
+  function renderDateNav() {
+    const days = view.days.includes(date) ? view.days : [...view.days, date].sort();
+    const i = days.indexOf(date), prev = days[i - 1], next = days[i + 1];
+    $('#date-nav').innerHTML = `
+      ${prev ? `<a class="datenav__btn" href="${hrefOf(prev)}">‹ ${md(prev).replace(/（.）/, '')}</a>` : '<span class="datenav__btn is-off">‹</span>'}
+      <select class="datenav__sel" aria-label="日付を選ぶ">${[...days].reverse().map((x) =>
+        `<option value="${hrefOf(x)}" ${x === date ? 'selected' : ''}>${md(x)}${dayName(x) ? ' ' + dayName(x) : ''}</option>`).join('')}</select>
+      ${next ? `<a class="datenav__btn" href="${hrefOf(next)}">${md(next).replace(/（.）/, '')} ›</a>` : '<span class="datenav__btn is-off">›</span>'}
+      ${date !== view.today ? `<a class="datenav__today" href="?today=1">今日に戻る</a>` : ''}`;
+    $('#date-nav select').onchange = (e) => { location.href = e.target.value; };
+    $('#auto-note').hidden = !view.auto;
+    if (view.auto) $('#auto-note').innerHTML = `本日（${md(view.today)}）の全レースが終わったので、明日の出走表を表示しています。<a href="?today=1">今日の結果を見る</a>`;
   }
 
   // ---- ヒーロー KPI
   function renderHero() {
     const d = new Date(+date.slice(0, 4), +date.slice(4, 6) - 1, +date.slice(6, 8));
     const w = '日月火水木金土'[d.getDay()];
-    $('#today-label').innerHTML = `${d.getMonth() + 1}月${d.getDate()}日<small>（${w}）</small>の開催状況<span class="summary__upd">${updatedAt.slice(11)} 更新</span>`;
+    const kind = date > view.today ? '出走表' : date < view.today ? 'レース結果' : '開催状況';
+    $('#today-label').innerHTML = `${d.getMonth() + 1}月${d.getDate()}日<small>（${w}）</small>の${kind}<span class="summary__upd">${updatedAt.slice(11)} 更新</span>`;
+    renderDateNav();
+    $('#venues .sec__title').textContent = date === view.today ? '本日の開催場' : `${+date.slice(4, 6)}/${+date.slice(6)}の開催場`;
     const allDone = openVenues.flatMap((v) => v.s.done);
     const man = allDone.filter((r) => r.result.payout >= 10000).length;
     const inRate = allDone.length ? Math.round(allDone.filter((r) => r.result.order[0] === 1).length / allDone.length * 100) : 0;
@@ -192,7 +218,7 @@ window.WAKE_READY.then((first) => {
     const v = venues.find((x) => x.id === +vid);
     if (!v || !v.open) return;
     // レースはレースページ（race.html）で見せる
-    location.href = `race.html?j=${v.id}${rno ? `&r=${rno}` : ''}`;
+    location.href = `race.html?j=${v.id}${rno ? `&r=${rno}` : ''}${dq}`;
     return;
     cur = { v, r: rno || (v.s.nextRace ? v.s.nextRace.no : 12) };
     $('#drawer').classList.add('is-open');
@@ -339,8 +365,10 @@ window.WAKE_READY.then((first) => {
       }
     } catch (e) { /* 取得中などで読めなければ次の回に */ }
   }
-  setInterval(refresh, 30 * 1000);
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
+  if (live) {  // 今日を見ているときだけ自動で取り直す
+    setInterval(refresh, 30 * 1000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
+  }
 }).catch((err) => {
   document.querySelector('#venue-grid').innerHTML =
     `<p class="empty">データを読み込めませんでした（${err.message}）。<br>python3 scripts/fetch_today.py を実行してください。</p>`;

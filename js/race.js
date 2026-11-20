@@ -221,7 +221,7 @@ window.WAKE_READY.then((first) => {
         ${row('直近1ヶ月<br><small>2連率</small>', ({ b }) => { const s = mstat(v.id, b.motorNo); return s && s.m1.n ? `${f1(s.m1.r2)}<small>${s.m1.n}走</small>` : '—'; })}
         ${row('貢献P', ({ b }) => { const s = mstat(v.id, b.motorNo); return s && s.all.kp != null ? `<b class="${s.all.kp > 0 ? 'is-plus' : 'is-minus'}">${s.all.kp > 0 ? '+' : ''}${s.all.kp.toFixed(2)}</b>` : '—'; })}
         ${row('展示順位<br><small>平均</small>', ({ b }) => { const s = mstat(v.id, b.motorNo); return s && s.all.exRank ? f2(s.all.exRank) : '—'; })}
-        ${row('履歴', ({ b }) => `<a class="mbtn" href="#m/${b.motorNo}">#${b.motorNo} 履歴</a>`)}
+        ${row('履歴', ({ b }) => `<a class="mbtn" href="#m/${b.motorNo}"><b>#${b.motorNo}</b><span>履歴 ›</span></a>`)}
         ${sec('モーター評価', 'GACHIIKU独自の評価')}
         ${row('総合', ({ b }) => mevTotal(v.id, b.motorNo))}
         ${MEV_AXES.map(([k, l]) => row(`${l}<br><small>5点満点</small>`, ({ b }) => mevCell(v.id, b.motorNo, k))).join('')}

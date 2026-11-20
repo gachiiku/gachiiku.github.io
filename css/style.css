@@ -878,3 +878,25 @@ a.en__who:hover b { color: var(--navy); text-decoration: underline; }
   .mo-sum dd { font-size: 17px; }
   .mo-tbl td, .mo-tbl th { padding: 5px 3px; font-size: 12px; }
 }
+
+/* 日付の切り替え */
+.summary__head { display: flex; flex-direction: column; gap: 8px; }
+.datenav { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.datenav__btn { height: 32px; display: inline-flex; align-items: center; padding: 0 10px; border: 1px solid var(--line-2); border-radius: var(--r); font-family: var(--num); font-size: 14px; color: var(--navy); background: var(--bg); }
+.datenav__btn:hover { border-color: var(--navy); }
+.datenav__btn.is-off { color: var(--line-2); }
+.datenav__sel { height: 32px; padding: 0 8px; border: 1px solid var(--line-2); border-radius: var(--r); font: inherit; font-size: 14px; font-weight: 700; color: var(--tx); background: var(--bg); }
+.datenav__today { font-size: 13px; color: var(--navy); text-decoration: underline; margin-left: 4px; }
+.auto-note { width: 100%; padding: 8px 12px; border-radius: var(--r); background: var(--gold-2); border: 1px solid #e6c66b; font-size: 13px; color: #6b4d00; }
+.auto-note a { color: var(--navy); font-weight: 700; text-decoration: underline; margin-left: 8px; }
+@media (max-width: 600px) {
+  .datenav__sel { flex: 1; min-width: 0; }
+}
+.mbtn { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.2; padding: 4px 10px; }
+.mbtn b { font-family: var(--num); font-size: 14px; font-weight: 500; }
+.mbtn span { font-size: 10.5px; }
+@media (max-width: 600px) {
+  .mbtn { display: flex; width: 100%; padding: 4px 0; }
+  .mbtn b { font-size: 12px; }
+  .mbtn span { font-size: 9.5px; }
+}

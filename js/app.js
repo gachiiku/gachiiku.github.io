@@ -234,7 +234,7 @@ window.WAKE_READY.then((first) => {
       <div class="entry">${r.boats.map((b) => `
         <div class="en">
           <span class="ln ln-${b.lane}">${b.lane}</span>
-          <div class="en__who"><b>${b.name}</b><small>${b.no}・${b.branch}・${b.age}歳・${b.weight}kg</small></div>
+          <a class="en__who" href="#r/${b.no}"><b>${b.name}</b><small>${b.no}・${b.branch}・${b.age}歳・${b.weight}kg</small></a>
           <span class="cls cls-${b.cls}">${b.cls}</span>
           <div class="en__num"><span>全国</span><b>${f2(b.nat)}</b></div>
           <div class="en__num"><span>当地</span><b>${b.local ? f2(b.local) : '—'}</b></div>

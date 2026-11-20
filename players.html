@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#12305f">
+  <meta name="apple-mobile-web-app-title" content="WAKE">
+  <meta name="format-detection" content="telephone=no">
+  <title>選手データ｜WAKE</title>
+  <meta name="description" content="全ボートレーサーの勝率・コース別成績・スタート・期別推移と評価。">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css?v=20261120b">
+</head>
+<body>
+  <!-- ===== Header ===== -->
+  <header class="hdr">
+    <div class="hdr__inner">
+      <a class="logo" href="index.html" aria-label="WAKE トップ">
+        <span class="logo__mark">W</span>
+        <span class="logo__txt">WAKE<small>ボートレース データ</small></span>
+      </a>
+      <nav class="nav" aria-label="メイン">
+        <a href="index.html#venues">出走表</a>
+        <a href="index.html#ranking">場傾向</a>
+        <a href="index.html#finder">レース検索</a>
+        <a href="players.html" class="is-active">選手</a>
+      </nav>
+      <div class="hdr__clock" id="clock">--:--</div>
+    </div>
+  </header>
+
+  <main id="top">
+    <!-- ===== 選手 ===== -->
+    <section class="sec sec--page" id="players">
+      <div class="sec__head">
+        <h1 class="sec__title">選手データ</h1>
+        <p class="sec__note" id="pl-term">読み込み中…</p>
+      </div>
+      <div class="pl-tools">
+        <input class="pl-q" id="pl-q" type="search" placeholder="選手名・カナ・登番で検索" autocomplete="off" enterkeyhint="search">
+        <div class="seg" id="pl-cls">
+          <button class="is-on" data-c="all">全級</button><button data-c="A1">A1</button><button data-c="A2">A2</button><button data-c="B1">B1</button><button data-c="B2">B2</button>
+        </div>
+        <select class="pl-sel" id="pl-branch" aria-label="支部"></select>
+        <select class="pl-sel" id="pl-sort" aria-label="並び順">
+          <option value="ability">能力指数が高い順</option>
+          <option value="win">勝率が高い順</option>
+          <option value="quin">2連対率が高い順</option>
+          <option value="st">平均STが速い順</option>
+          <option value="champs">優勝回数が多い順</option>
+        </select>
+      </div>
+      <p class="pl-count"><span id="pl-count">0</span> 人</p>
+      <ul class="pl-list" id="pl-list"></ul>
+      <button class="pl-more" id="pl-more" hidden>もっと見る</button>
+    </section>
+  </main>
+
+  <footer class="ftr">
+    <div class="ftr__inner">
+      <div class="logo"><span class="logo__mark">W</span><span class="logo__txt">WAKE<small>ボートレース データ</small></span></div>
+      <nav class="ftr__nav">
+        <a href="index.html#venues">出走表</a><a href="index.html#ranking">場傾向</a><a href="index.html#finder">レース検索</a><a href="players.html">選手</a>
+        <a href="#">利用規約</a><a href="#">プライバシーポリシー</a><a href="#">お問い合わせ</a>
+      </nav>
+      <p class="ftr__note">※ 出走表・結果データの出典：BOAT RACE オフィシャルウェブサイト。予想指数は参考値です。舟券の購入は20歳になってから。</p>
+    </div>
+  </footer>
+
+  <!-- ===== スマホ用 下部タブ ===== -->
+  <nav class="tabbar" aria-label="メニュー">
+    <a href="index.html#venues">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg><span>出走表</span></a>
+    <a href="index.html#ranking">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V11M12 20V5M19 20v-6"/></svg><span>場傾向</span></a>
+    <a href="index.html#finder">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></svg><span>検索</span></a>
+    <a href="players.html" class="is-active">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4.5-6 8-6s7 2 8 6"/></svg><span>選手</span></a>
+  </nav>
+
+  <!-- ===== 選手ページ ===== -->
+  <div class="racer" id="racer" aria-hidden="true">
+    <div class="racer__panel" role="dialog" aria-modal="true" aria-labelledby="rp-title">
+      <header class="racer__head">
+        <button class="racer__back" data-rclose aria-label="戻る">‹ 戻る</button>
+        <div>
+          <p class="drawer__meta" id="rp-meta"></p>
+          <h3 class="racer__title" id="rp-title"></h3>
+        </div>
+      </header>
+      <div class="racer__body" id="rp-body"></div>
+    </div>
+  </div>
+
+  <script>
+    // 時計
+    const ck = () => { const d = new Date(), p = (n) => String(n).padStart(2, '0');
+      document.getElementById('clock').innerHTML = `<small>現在</small>${p(d.getHours())}:${p(d.getMinutes())}`; };
+    ck(); setInterval(ck, 10000);
+  </script>
+  <script src="js/racers.js?v=20261120c"></script>
+</body>
+</html>

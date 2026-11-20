@@ -39,6 +39,16 @@ jobs:
         if: github.event_name != 'push'
         run: python -u scripts/fetch_today.py
 
+      - name: 選手データ更新（1日1回）
+        if: github.event_name != 'push'
+        run: |
+          if grep -q "\"updatedAt\":\"$(date +%Y-%m-%d)" data/racers/index.json 2>/dev/null; then
+            echo '本日分は更新済み'
+          else
+            command -v bsdtar || sudo apt-get install -y -qq libarchive-tools
+            python -u scripts/fetch_racers.py
+          fi
+
       - name: 取得したデータを保存
         if: github.event_name != 'push'
         run: |
@@ -53,7 +63,7 @@ jobs:
       - name: 公開用ファイルをまとめる
         run: |
           mkdir -p _site
-          cp -r index.html css js data _site/
+          cp -r index.html players.html css js data _site/
           rm -f _site/data/.fetch.lock
 
       - uses: actions/upload-pages-artifact@v3

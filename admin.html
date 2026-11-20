@@ -99,7 +99,7 @@
 
   <script>
   (() => {
-    // 受け付け窓口（Google Apps Script のウェブアプリ URL）。gas/Code.gs を公開して得た URL を入れる
+    // 受け付け窓口（Cloudflare Workers の URL）。worker/motor.js を公開して得た URL を入れる
     const ENDPOINT = '';
     const PATH = 'data/motor_eval.json';
     const GRADES = ['1', '2', '3', '4', '5'];
@@ -229,7 +229,7 @@
       $('#status').textContent = '保存中…';
       try {
         if (!ENDPOINT) throw new Error('受け付け窓口がまだ設定されていません');
-        // text/plain で送ると、ブラウザの事前確認なしで Apps Script に届く
+        // text/plain で送ると、ブラウザの事前確認なしで窓口に届く
         const res = await fetch(ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ pass: store.get(), changes: draft }) });
         const j = await res.json();
         if (!j.ok) throw new Error(j.error || '保存できませんでした');

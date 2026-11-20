@@ -76,7 +76,7 @@
         <ol>
           <li>GitHub にログインして <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Fine-grained token の作成ページ</a> を開く</li>
           <li>Token name に「GACHIIKU モーター評価」、Expiration は好きな期限</li>
-          <li>Repository access で「Only select repositories」→ <b>wake</b> を選ぶ</li>
+          <li>Resource owner を <b>gachiiku</b> にし、Repository access で「Only select repositories」→ <b>gachiiku.github.io</b> を選ぶ</li>
           <li>Permissions → Repository permissions → <b>Contents</b> を「Read and write」にする</li>
           <li>「Generate token」で出てきた鍵をコピーして、上の欄に貼り付ける</li>
         </ol>
@@ -108,7 +108,7 @@
 
   <script>
   (() => {
-    const REPO = 'harutos7428-alt/wake';
+    const REPO = 'gachiiku/gachiiku.github.io';
     const PATH = 'data/motor_eval.json';
     const API = `https://api.github.com/repos/${REPO}/contents/${PATH}`;
     const GRADES = ['1', '2', '3', '4', '5'];
@@ -242,7 +242,7 @@
         await reload();
       } else {
         store.del();
-        $('#tok-msg').className = 'ad-msg is-ng'; $('#tok-msg').textContent = '書き込みできる鍵ではありませんでした。手順の「Contents: Read and write」と対象の「wake」を確認してください。';
+        $('#tok-msg').className = 'ad-msg is-ng'; $('#tok-msg').textContent = '書き込みできる鍵ではありませんでした。手順の「Contents: Read and write」と対象の「gachiiku.github.io」を確認してください。';
       }
       updateBar();
     });

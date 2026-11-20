@@ -254,7 +254,7 @@ window.WAKE_READY.then((first) => {
   render();
   setInterval(tick, 1000);
 
-  // 今日のレースは1分ごとに結果・展示を取り直す
+  // 今日のレースは30秒ごとに結果・展示を取り直す
   if (isToday) {
     setInterval(async () => {
       try {
@@ -263,7 +263,7 @@ window.WAKE_READY.then((first) => {
         ({ venues, date, updatedAt } = data);
         render();
       } catch (e) { /* 次の回に */ }
-    }, 60 * 1000);
+    }, 30 * 1000);
   }
 }).catch((err) => {
   document.querySelector('#rc-title').textContent = `データを読み込めませんでした（${err.message}）`;

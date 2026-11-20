@@ -1,5 +1,5 @@
 #!/bin/bash
-# GitHub Actions 上で約5時間40分のあいだ、10分おきにデータを取得して公開する。
+# GitHub Actions 上で約5時間40分のあいだ、約3分おきにデータを取得して公開する。
 # （GitHub の時刻指定実行が当てにならないため、ループで回し、終わったら次のループを起動する）
 #   8:00〜23:59（日本時間）: 本日のデータ取得 → 前日の結果を過去データに追加 → 保存 → サイト更新
 set -u
@@ -31,6 +31,6 @@ while [ "$(date +%s)" -lt "$END" ]; do
       echo '変更なし'
     fi
   fi
-  WAIT=$(( 600 - ($(date +%s) - START) ))
+  WAIT=$(( 180 - ($(date +%s) - START) ))
   if [ "$WAIT" -gt 0 ]; then sleep "$WAIT"; fi
 done

@@ -323,7 +323,7 @@ window.WAKE_READY.then((first) => {
   renderAll();
   setInterval(tick, 1000);
 
-  // ---- 自動更新: 1分ごとに today.json を見て、更新されていれば描き直す
+  // ---- 自動更新: 30秒ごとに today.json を見て、更新されていれば描き直す
   async function refresh() {
     try {
       const data = await window.WAKE_LOAD();
@@ -339,7 +339,7 @@ window.WAKE_READY.then((first) => {
       }
     } catch (e) { /* 取得中などで読めなければ次の回に */ }
   }
-  setInterval(refresh, 60 * 1000);
+  setInterval(refresh, 30 * 1000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
 }).catch((err) => {
   document.querySelector('#venue-grid').innerHTML =

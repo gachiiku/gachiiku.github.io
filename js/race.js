@@ -306,7 +306,7 @@ window.WAKE_READY.then((first) => {
         <td><span class="ln ln-${ln}">${ln}</span></td><td>${c || '—'}</td>
         <td>${st == null ? '—' : st < 0 ? 'F' + st2(-st) : st2(st)}</td>
         <td>${ex ? ex.toFixed(2) : '—'}<small>${exr ? exr + '位' : ''}</small></td>
-        <td><b>${posS(pos)}</b></td>
+        <td>${typeof pos === "number" ? `<span class="pos pos--${pos}">${pos}</span>` : `<span class="pos pos--x">${posS(pos)}</span>`}</td>
         <td><button class="vbtn vbtn--sm" data-video="${d.jcd}-${dt}-${rr}" aria-label="映像">▶</button></td></tr>`).join('')}</tbody></table></div></div>`).join('');
     return `${evalHtml}<p class="rp-span">使用開始 ${ymdS(d.start)} 〜 ${ymdS(d.last)} の全出走（${d.series.length}節）。貢献P＝そのモーターで取った得点と、乗った選手のふだんの勝率との差（プラスほど選手の実力以上に走っている）。</p>
       <div class="mo-sums">${card('使用開始から', A)}${card('直近1ヶ月', M1)}</div>${ser || '<p class="empty">出走記録がありません</p>'}`;

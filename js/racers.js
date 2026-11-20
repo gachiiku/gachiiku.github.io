@@ -252,6 +252,8 @@
   const md = (d) => `${+d.slice(4, 6)}/${+d.slice(6, 8)}`;
   const pct = (n) => (n == null ? '—' : n.toFixed(1));
   const posTxt = (p) => (typeof p === 'number' ? p : p ? p.replace(/\d/, '') : '—');
+  // 着順バッジ（1着=赤、2着=紺、3着=薄紺、4〜6着=灰、F・Lなど=文字）
+  const posBadge = (p) => (typeof p === 'number' ? `<span class="pos pos--${p}">${p}</span>` : `<span class="pos pos--x">${p ? ({ F: 'F', L: 'L', K: '欠', S: '失' }[String(p)[0]] || p) : '—'}</span>`);
   const KIMS = ['逃げ', '差し', 'まくり', 'まくり差し', '抜き', '恵まれ'];
   const spanNote = (s) => `<p class="rp-span">集計期間：${ymd(s.histSpan[0])} 〜 ${ymd(s.histSpan[1])}（GACHIIKUが記録しているレース）</p>`;
   const tbl = (head, rows, cls = '') => `<div class="rp-tbl-wrap"><table class="rp-tbl rp-tbl--stat ${cls}">
@@ -326,7 +328,7 @@
         <td class="cr-v">${VENUES[jcd]} ${r}R<small>${grade !== '一般' ? grade + '・' : ''}${name}</small></td>
         <td><span class="ln ln-${lane}">${lane}</span></td>
         <td>${st == null ? '—' : st < 0 ? 'F' + st2(-st) : st2(st)}<small>${strank ? strank + '位' : ''}</small></td>
-        <td><b>${posTxt(pos)}</b></td>
+        <td>${posBadge(pos)}</td>
         <td class="cr-k">${pos === 1 ? `<span class="k-gain">${kim}</span>` : kim ? `<span class="k-lose">${kim}</span>` : ''}</td>
         <td class="cr-o">${order ? order.split('').join('-') : ''}</td>
         <td><button class="vbtn vbtn--sm" data-video="${jcd}-${d}-${r}" aria-label="映像">▶</button></td></tr>`).join('');
@@ -416,7 +418,7 @@
           <span class="ln ln-${lane}">${lane}</span>
           <span class="rp-runs__st">${st == null ? '—' : st < 0 ? 'F' + st2(-st) : st2(st)}</span>
           <span class="rp-runs__c">${c ? `(${c})` : ''}</span>
-          <b>${posTxt(pos)}</b>
+          ${posBadge(pos)}
           <button class="vbtn vbtn--sm" data-video="${x.jcd}-${d}-${r}" aria-label="映像">▶</button></li>`).join('')}</ol></div>`).join('');
   }
 

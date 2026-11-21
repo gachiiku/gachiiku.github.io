@@ -248,10 +248,10 @@ window.WAKE_READY.then((first) => {
       ${commentCard(v, r)}`;
     const result = r.result && r.result.canceled
       ? '<div class="result result--cancel"><span class="result__l">レース中止</span><span class="result__note">舟券は返還されます</span></div>'
-      : r.result ? `<div class="result"><span class="result__l">結果</span>
+      : r.result ? `<div class="result"><span class="result__l">結果${window.GTAG && GTAG.isKado(`${date}-${v.id}-${r.no}`) ? '<span class="result__kado" title="レース映像で、3コースの艇がダッシュに引いたことを確認">3角</span>' : ''}</span>
         <div class="result__o">${r.result.order.map((l) => `<span class="ln ln-${l}">${l}</span>`).join('<i>-</i>')}</div>
         <span class="result__p ${r.result.payout >= 10000 ? 'is-man' : ''}">3連単 ${yen(r.result.payout)}</span>
-        ${window.GTAG && GTAG.isKado(`${date}-${v.id}-${r.no}`) ? '<span class="result__kado" title="レース映像で、3コースの艇がダッシュに引いたことを確認">3角</span>' : ''}
+
         <button class="vbtn" data-video="${v.id}-${date}-${r.no}">▶ レース映像 ↗</button></div>` : '';
 
     // スタート展示の進入（枠なりかどうか、前づけ・動いた艇を目立たせる）
@@ -307,7 +307,11 @@ window.WAKE_READY.then((first) => {
       if (b.tilt != null && b.tilt >= 3 && v.id !== 3) out.push( // 江戸川はチルトを上げるのが普通なので出さない
         ['チルト3', `チルト +${b.tilt.toFixed(1)}度（最大。出足を捨てて伸びに振った調整）`]);
       if (window.GTAG) out.push(...GTAG.marks(b.no, likelyCourse(b, s)));
-      return out.length ? `<span class="mk-row">${out.map(([l, t]) => `<span class="mk mk--${l === '前' || l === '展示前' || l === '展示3角' ? 'mae' : l === 'チルト3' ? 'tilt' : 'tag'}" data-tip="${t}" role="button" tabindex="0">${l}</span>`).join('')}</span>` : '';
+      // 3コースに入りそうで、過去に本番で3角をした選手（展示がスローでも本番で引くことがある）
+      if (window.GTAG && likelyCourse(b, s) === 3 && GTAG.kadoCount(b.no) && !(r.exKado && b.exCourse === 3)) {
+        out.push(['3角歴', `過去に本番で3角（3コースからダッシュに引いた）${GTAG.kadoCount(b.no)}回（レース映像で確認）。展示がスローでも本番で引くことがある`]);
+      }
+      return out.length ? `<span class="mk-row">${out.map(([l, t]) => `<span class="mk mk--${l === '前' || l === '展示前' || l === '展示3角' ? 'mae' : l === 'チルト3' ? 'tilt' : l === '3角歴' ? 'kado' : 'tag'}" data-tip="${t}" role="button" tabindex="0">${l}</span>`).join('')}</span>` : '';
     };
     const col = (fn, cls = '') => boats.map((x) => `<td class="${cls}">${fn(x)}</td>`).join('');
     const sec = (title, note) => `<tr class="rc-sec"><th colspan="7">${title}${note ? `<small>${note}</small>` : ''}</th></tr>`;
@@ -428,7 +432,7 @@ window.WAKE_READY.then((first) => {
 
     const hasStats = boats.some((x) => x.s);
     return exinCard(r) + cond + result + table
-      + `<p class="rc-note">赤字はそのレースの6艇で一番良い数字。選手名の下のマーク：<b>展示前</b>＝スタート展示で前づけした、<b>展示3角</b>＝スタート展示で3コースからダッシュに引いた、<b>前</b>＝前づけしやすい（2〜6枠で枠より内に入る割合15%以上）、<b>チルト3</b>＝チルト+3度、<b>握</b>＝2コースに入りそうで2コース握り率50%以上、<b>3角</b>＝3コースに入りそうでダッシュに引く率（3カド率）40%以上、<b>変全</b>＝3コースに入りそうで変わり全速率50%以上（握・3角・変全は映像タグ・直近1年。入りそうなコースはその枠から一番多く入ったコース）。マークを押すと数字が出ます。<b>チルト3</b>は江戸川では出しません（チルトを上げるのが普通のため）。コース別データ・勝ち筋・負け筋は、枠番どおりのコース（スタート展示で進入が変わったら展示のコース）の成績です。SG・G1開催では勝ち筋・負け筋をSG・G1のレースだけで数えます${hasStats ? `（集計 ${boats.find((x) => x.s).s.histSpan.map((d) => `${d.slice(0, 4)}/${+d.slice(4, 6)}/${+d.slice(6)}`).join('〜')}）` : ''}。</p>`;
+      + `<p class="rc-note">赤字はそのレースの6艇で一番良い数字。選手名の下のマーク：<b>展示前</b>＝スタート展示で前づけした、<b>展示3角</b>＝スタート展示で3コースからダッシュに引いた、<b>3角歴</b>＝3コースに入りそうで、過去に本番で3角をしたことがある（展示がスローでも本番で引くことがある）、<b>前</b>＝前づけしやすい（2〜6枠で枠より内に入る割合15%以上）、<b>チルト3</b>＝チルト+3度、<b>握</b>＝2コースに入りそうで2コース握り率50%以上、<b>3角</b>＝3コースに入りそうでダッシュに引く率（3カド率）40%以上、<b>変全</b>＝3コースに入りそうで変わり全速率50%以上（握・3角・変全は映像タグ・直近1年。入りそうなコースはその枠から一番多く入ったコース）。マークを押すと数字が出ます。<b>チルト3</b>は江戸川では出しません（チルトを上げるのが普通のため）。コース別データ・勝ち筋・負け筋は、枠番どおりのコース（スタート展示で進入が変わったら展示のコース）の成績です。SG・G1開催では勝ち筋・負け筋をSG・G1のレースだけで数えます${hasStats ? `（集計 ${boats.find((x) => x.s).s.histSpan.map((d) => `${d.slice(0, 4)}/${+d.slice(4, 6)}/${+d.slice(6)}`).join('〜')}）` : ''}。</p>`;
   }
 
   // ---------- モーター機歴ページ（#m/番号） ----------

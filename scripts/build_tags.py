@@ -115,6 +115,7 @@ def main(out_dir=ROOT):
     cut = {p: (base - timedelta(days=d)).strftime('%Y%m%d') if d else '' for p, d in PERIODS.items()}
 
     racers = {}   # no -> period -> stats
+    kado_racers = {}  # 本番で3角（3カド）をした選手 -> 回数（映像で確認したもの）
     total = {p: empty() for p in PERIODS}
     used = 0
     for d, keys in sorted(days.items()):
@@ -130,6 +131,9 @@ def main(out_dir=ROOT):
             if not race:
                 continue
             by = {e[2]: e for e in race['e'] if isinstance(e[2], int)}
+            if tags[key].get('k') == 1 and by.get(3):
+                no3 = str(by[3][0])
+                kado_racers[no3] = kado_racers.get(no3, 0) + 1
             one = {}
 
             def acc(no):
@@ -151,7 +155,7 @@ def main(out_dir=ROOT):
         'racers': racers,
     }
     # 過去のレース表示用：映像で3角（3カド）と判定したレースの一覧
-    marks = {'kado': sorted(k for k, t in tags.items() if t.get('k') == 1)}
+    marks = {'kado': sorted(k for k, t in tags.items() if t.get('k') == 1), 'kadoRacers': kado_racers}
     (Path(out_dir) / 'data').mkdir(parents=True, exist_ok=True)
     (Path(out_dir) / 'data' / 'tagmarks.json').write_text(json.dumps(marks, separators=(',', ':')), encoding='utf-8')
     out = Path(out_dir) / 'data' / 'tagstats.json'

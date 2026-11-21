@@ -95,7 +95,24 @@ def amagasaki():
     return {'source': 'ボートレース尼崎 公式サイト', 'url': 'https://www.boatrace-amagasaki.jp/', 'racers': racers}
 
 
-FETCHERS = {13: amagasaki, 21: ashiya, 24: omura}
+def miyajima():
+    """宮島: 今のレース前後の選手コメント（取りに行くたびに増えていくので、前回分と合わせて使う）"""
+    url = 'https://www.boatrace-miyajima.com/race_common/require/kaisai_reload.php'
+    req = urllib.request.Request(url, data=b'', headers={'User-Agent': UA, 'Referer': 'https://www.boatrace-miyajima.com/'})
+    page = urllib.request.urlopen(req, timeout=30).read().decode('utf-8', 'replace')
+    racers = {}
+    for tr in re.findall(r'<tr[^>]*>(.*?)</tr>', page, re.S):
+        no = re.search(r'profile\?toban=(\d{4})', tr)
+        c = re.search(r'class="table_txt_comment">(.*?)</td>', tr, re.S)
+        if no and c:
+            t = clean(re.sub(r'<span.*$', '', c.group(1), flags=re.S))
+            upd = re.search(r'(\d{1,2}:\d{2})更新', c.group(1))
+            if t:
+                racers[no.group(1)] = {'c': t + (f'（{upd.group(1)}）' if upd else ''), 'm': ''}
+    return {'source': 'ボートレース宮島 公式サイト', 'url': 'https://www.boatrace-miyajima.com/', 'racers': racers, 'merge': True}
+
+
+FETCHERS = {13: amagasaki, 17: miyajima, 21: ashiya, 24: omura}
 
 
 def main():
@@ -124,6 +141,8 @@ def main():
         try:
             got = fn()
             got['fetched'] = now
+            if got.pop('merge', False) and old:  # 一部ずつしか出ない場は、前回までの分と合わせる
+                got['racers'] = {**old.get('racers', {}), **got['racers']}
             if got['racers']:
                 venues[str(jcd)] = got
                 print(f'  {got["source"]}: {len(got["racers"])}人')

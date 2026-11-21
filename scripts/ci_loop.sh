@@ -15,6 +15,7 @@ while [ "$(date +%s)" -lt "$END" ]; do
     echo "=== $(date '+%Y-%m-%d %H:%M:%S')"
     git pull -q --rebase origin main || git rebase --abort 2>/dev/null
     python -u scripts/fetch_today.py || echo 'fetch_today 失敗（次の回に再挑戦）'
+    python -u scripts/fetch_comments.py || echo '選手コメントの取得に失敗'
     Y=$(date -d yesterday +%Y)
     D=$(date -d yesterday +%Y%m%d)
     if [ ! -f "data/hist/$Y/$D.json.gz" ]; then

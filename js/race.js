@@ -112,6 +112,24 @@ window.WAKE_READY.then((first) => {
   const loadMotors = (j) => (motorSum[j] ? Promise.resolve() : getJSON(`data/motors/${j}.json`).then((d) => { motorSum[j] = d || { motors: {} }; }));
   const mstat = (j, m) => ((motorSum[j] || {}).motors || {})[m] || null;
 
+  // ---------- 選手コメント（各場の公式サイトから。出している場だけ） ----------
+  let comments = { venues: {} };
+  const loadComments = () => fetch('data/comments.json', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null))
+    .then((d) => { if (d) comments = d; }).catch(() => {});
+  function commentCard(v, r) {
+    const c = comments.venues && comments.venues[String(v.id)];
+    if (!c || comments.date !== date) return '';
+    const rows = r.boats.map((b) => {
+      const x = c.racers[String(b.no)];
+      return `<li><span class="ln ln-${b.lane}">${b.lane}</span>
+        <div class="cmt__who"><b>${esc(b.name)}</b>${x && x.m ? `<small>場のモーター評価 ${esc(x.m)}</small>` : ''}</div>
+        <p class="cmt__txt">${x ? `「${esc(x.c)}」` : '<span class="cmt__none">コメントなし</span>'}</p></li>`;
+    }).join('');
+    return `<div class="card cmt"><h4 class="card__h">選手コメント <small>${esc(c.source)}より</small></h4>
+      <ul class="cmt__list">${rows}</ul>
+      <p class="rp-def">出典：<a href="${esc(c.url)}" target="_blank" rel="noopener">${esc(c.source)}</a>（各場が公開しているコメントをそのまま掲載）</p></div>`;
+  }
+
   // ---------- 水面の図（風と波） ----------
   // 図はスタンドが下、ホームストレッチを右へ進むと1マーク（ボートは左回り）。公式の風アイコンと同じ向き。
   function waterCard(wx, venue) {
@@ -161,7 +179,7 @@ window.WAKE_READY.then((first) => {
     syncUrl();
     renderNav(v, r);
     const my = ++seq;
-    const [data] = await Promise.all([Promise.all(r.boats.map((b) => racer(b.no))), loadMev(), loadMotors(v.id)]);
+    const [data] = await Promise.all([Promise.all(r.boats.map((b) => racer(b.no))), loadMev(), loadMotors(v.id), loadComments()]);
     if (my !== seq) return; // 途中で別のレースに切り替わった
     const boats = r.boats.map((b, i) => ({ b, s: data[i][0], p: data[i][1] }));
     $('#rc-body').innerHTML = renderBody(v, r, boats);
@@ -176,7 +194,8 @@ window.WAKE_READY.then((first) => {
       <div><span>風</span><b>${wx.wind != null ? `${wx.windRel ? `<em class="wrel wrel--${{ '追い風': 'tail', '向かい風': 'head' }[wx.windRel] || 'side'}">${wx.windRel}</em>` : ''}${wx.wind}m` : '—'}</b></div>
       <div><span>波高</span><b>${wx.wave != null ? wx.wave + 'cm' : '—'}</b></div>
       <div><span>気温 / 水温</span><b>${wx.temp != null ? `${wx.temp}℃ / ${wx.waterTemp}℃` : '—'}</b></div></div>
-      ${wx.windAngle != null ? waterCard(wx, v.name) : ''}`;
+      ${wx.windAngle != null ? waterCard(wx, v.name) : ''}
+      ${commentCard(v, r)}`;
     const result = r.result && r.result.canceled
       ? '<div class="result result--cancel"><span class="result__l">レース中止</span><span class="result__note">舟券は返還されます</span></div>'
       : r.result ? `<div class="result"><span class="result__l">結果</span>

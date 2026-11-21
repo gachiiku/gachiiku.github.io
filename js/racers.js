@@ -407,7 +407,7 @@
         <span class="rp-fin__d">${ymd(d)}</span>
         <span class="rp-fin__t"><span class="tag tag--g ${g === 'SG' || g === 'G1' ? 'is-big' : ''}">${g}</span>${title}<small>${VENUES[j]} ${r}R</small></span>
         <span class="rp-fin__l"><span class="ln ln-${lane}">${lane}</span><small>${c ? `(${c})` : ''}</small></span>
-        <b>${pos === 1 ? '優勝' : posTxt(pos) + (typeof pos === 'number' ? '着' : '')}<small>${kim || ''}${order ? ` ${order.split('').join('-')}` : ''}</small></b></li>`).join('')}</ul></div>`;
+        <b>${pos === 1 ? '優勝' : posTxt(pos) + (typeof pos === 'number' ? '着' : '')}<small>${kim || ''}${order ? `<i>${order.split('').join('-')}</i>` : ''}</small></b></li>`).join('')}</ul></div>`;
   }
 
   function racesTab(s) {

@@ -1161,3 +1161,16 @@ a.en__who:hover b { color: var(--navy); text-decoration: underline; }
 .rp-kim td i.kc { display: block; font-style: normal; font-size: 9.5px; color: var(--tx-3); }
 .rp-kim__n td.is-few { color: var(--red); }
 .rp-kim__n td em { font-style: normal; font-size: 10px; font-weight: 900; margin-left: 2px; }
+
+/* スマホで短い文字が2行に折れないように */
+.vbtn, .result__p, .chip, .cr-sum > span, .rp-span, .al-badge, .mk, .tag { white-space: nowrap; }
+.result { flex-wrap: wrap; row-gap: 8px; }
+@media (max-width: 600px) {
+  .result .vbtn { margin-left: auto; padding: 6px 10px; font-size: 12px; }
+  .result__p { font-size: 18px; }
+  .result__p.is-man { font-size: 18px; }
+  .cr-sum { flex-wrap: wrap; gap: 2px 10px; }
+  .rp-fin li { grid-template-columns: 70px minmax(0, 1fr) 40px 64px; }
+  .rp-ser .card__h small { display: block; white-space: nowrap; margin: 2px 0 0; }
+}
+.rp-fin b small i { display: block; font-style: normal; }

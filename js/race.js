@@ -112,6 +112,45 @@ window.WAKE_READY.then((first) => {
   const loadMotors = (j) => (motorSum[j] ? Promise.resolve() : getJSON(`data/motors/${j}.json`).then((d) => { motorSum[j] = d || { motors: {} }; }));
   const mstat = (j, m) => ((motorSum[j] || {}).motors || {})[m] || null;
 
+  // ---------- 水面の図（風と波） ----------
+  // 図はスタンドが下、ホームストレッチを右へ進むと1マーク（ボートは左回り）。公式の風アイコンと同じ向き。
+  function waterCard(wx, venue) {
+    const W = 320, H = 170, cx = 160, cy = 82;
+    const a = wx.windAngle, sp = wx.wind || 0;
+    const len = 26 + Math.min(sp, 10) * 4.5;          // 風が強いほど長い矢印
+    const rad = (a - 90) * Math.PI / 180;               // 図の上の角度 → SVG の向き
+    const x2 = cx + Math.cos(rad) * len / 2, y2 = cy + Math.sin(rad) * len / 2;
+    const x1 = cx - Math.cos(rad) * len / 2, y1 = cy - Math.sin(rad) * len / 2;
+    const tone = { '追い風': 'tail', '向かい風': 'head' }[wx.windRel] || 'side';
+    const wave = Math.min(wx.wave || 0, 15);
+    const amp = 1.5 + wave * 0.9;                       // 波が高いほど大きく揺れる線
+    const wpath = (y) => { let d = `M 30 ${y}`; for (let x = 30; x < 290; x += 20) d += ` q 5 ${-amp} 10 0 t 10 0`; return d; };
+    const n = wx.northAngle;
+    const help = { '追い風': 'スタートの向き（1マークへ向かう方向）に吹く風。スタートで行き過ぎやすく、まくりが決まりにくい傾向。',
+      '向かい風': 'スタートの向きと逆に吹く風。スタートが届きにくく、まくり・まくり差しが決まりやすい傾向。',
+      '横風': 'コースを横切る風。ターンで流れやすくなることがある。' }[wx.windRel] || '';
+    return `<div class="card water"><h4 class="card__h">水面の状況 <small>${venue}・${wx.at || ''}${wx.at ? '時点' : ''}</small></h4>
+      <div class="water__body">
+      <svg class="water__svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="風${wx.windRel || ''}${sp}m、波高${wx.wave ?? '—'}cm">
+        <defs><marker id="wh" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="water__head water__head--${tone}"/></marker></defs>
+        <rect x="14" y="14" width="292" height="122" rx="8" class="water__pool"/>
+        <path d="${wpath(40)}" class="water__wave"/><path d="${wpath(110)}" class="water__wave"/>
+        <circle cx="270" cy="75" r="6" class="water__mark"/><text x="270" y="60" class="water__lab">1マーク</text>
+        <circle cx="50" cy="75" r="6" class="water__mark"/><text x="50" y="60" class="water__lab">2マーク</text>
+        <path d="M 70 124 H 250" class="water__start" marker-end="url(#ws)"/>
+        <defs><marker id="ws" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L10 5L0 10z" class="water__startHead"/></marker></defs>
+        <text x="160" y="118" class="water__lab water__lab--start">スタート → 1マーク</text>
+        <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" class="water__wind water__wind--${tone}" marker-end="url(#wh)"/>
+        <rect x="14" y="146" width="292" height="18" rx="3" class="water__stand"/><text x="160" y="159" class="water__lab water__lab--stand">スタンド</text>
+        ${n != null ? `<g transform="translate(292 30) rotate(${n})"><path d="M0 -11 L5 6 L0 2 L-5 6Z" class="water__n"/></g><text x="292" y="52" class="water__lab">北</text>` : ''}
+      </svg>
+      <dl class="water__dl">
+        <div><dt>風</dt><dd><em class="wrel wrel--${tone}">${wx.windRel || '—'}</em><b>${sp}</b>m${wx.windDir ? `<small>（${wx.windDir}の風）</small>` : ''}</dd></div>
+        <div><dt>波高</dt><dd><b>${wx.wave ?? '—'}</b>cm</dd></div>
+        <p class="water__help">${help}</p>
+      </dl></div></div>`;
+  }
+
   // ---------- 本体 ----------
   let seq = 0;
   async function render() {
@@ -134,9 +173,10 @@ window.WAKE_READY.then((first) => {
     const cond = `<div class="cond-row">
       <div><span>締切</span><b>${hm(r.deadline)}</b></div>
       <div><span>天候${wx.at ? `（${wx.at}時点）` : ''}</span><b>${wx.weather || '—'}</b></div>
-      <div><span>風</span><b>${wx.wind != null ? `${wx.windDir || ''} ${wx.wind}m` : '—'}</b></div>
+      <div><span>風</span><b>${wx.wind != null ? `${wx.windRel ? `<em class="wrel wrel--${{ '追い風': 'tail', '向かい風': 'head' }[wx.windRel] || 'side'}">${wx.windRel}</em>` : ''}${wx.wind}m` : '—'}</b></div>
       <div><span>波高</span><b>${wx.wave != null ? wx.wave + 'cm' : '—'}</b></div>
-      <div><span>気温 / 水温</span><b>${wx.temp != null ? `${wx.temp}℃ / ${wx.waterTemp}℃` : '—'}</b></div></div>`;
+      <div><span>気温 / 水温</span><b>${wx.temp != null ? `${wx.temp}℃ / ${wx.waterTemp}℃` : '—'}</b></div></div>
+      ${wx.windAngle != null ? waterCard(wx, v.name) : ''}`;
     const result = r.result && r.result.canceled
       ? '<div class="result result--cancel"><span class="result__l">レース中止</span><span class="result__note">舟券は返還されます</span></div>'
       : r.result ? `<div class="result"><span class="result__l">結果</span>

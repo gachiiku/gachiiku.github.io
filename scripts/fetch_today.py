@@ -185,9 +185,22 @@ def parse_beforeinfo(page):
     m = re.search(r'is-weather\d*"></p>\s*<div class="weather1_bodyUnitLabel">\s*<span class="weather1_bodyUnitLabelTitle">([^<]*)<', page)
     if m:
         w['weather'] = m.group(1).strip()
+    # 公式の風アイコン（is-wind1〜16）は、コース図（スタンドが下、スタートは右向き）の上で
+    # 風が吹いていく向きを、上から時計回りに22.5度ずつで表す。is-direction1〜16 は同じ図の上での北の向き。
     m = re.search(r'is-wind(\d+)"></p>', page)
+    d = re.search(r'is-direction(\d+)"></p>', page)
     if m:
-        w['windDir'] = WIND_DIR.get(int(m.group(1)), '')
+        wi = int(m.group(1))
+        to_screen = (wi - 1) * 22.5                      # 図の上で風が吹いていく向き（上=0, 右=90）
+        w['windAngle'] = to_screen
+        rel = (to_screen - 90 + 360) % 360               # スタート方向（右）からのずれ
+        diff = min(rel, 360 - rel)
+        w['windRel'] = '追い風' if diff <= 45 else '向かい風' if diff >= 135 else '横風'
+        if d:
+            north = (int(d.group(1)) - 1) * 22.5         # 図の上での北の向き
+            w['northAngle'] = north
+            frm = (to_screen - north + 180) % 360        # 風が吹いてくる方角（北=0, 東=90）
+            w['windDir'] = WIND_DIR.get(int(round(frm / 22.5)) % 16 + 1, '')
     m = re.search(r'水面気象情報\s*(\d+R)?', page)
     w['at'] = (m.group(1) or '') if m else ''
     return ex, w

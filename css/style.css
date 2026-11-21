@@ -990,3 +990,33 @@ a.en__who:hover b { color: var(--navy); text-decoration: underline; }
   .card__h .seg { display: flex; width: 100%; margin: 8px 0 0; }
   .card__h .tag { margin-right: 6px; vertical-align: 1px; }
 }
+
+/* 水面の状況（風と波の図） */
+.wrel { font-style: normal; font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 3px; margin-right: 4px; vertical-align: 2px; }
+.wrel--tail { background: #e6f4ec; color: var(--green); }
+.wrel--head { background: var(--red-2); color: var(--red); }
+.wrel--side { background: var(--bg-3); color: var(--tx-2); }
+.water__body { display: grid; grid-template-columns: minmax(0, 340px) 1fr; gap: 16px; align-items: center; }
+.water__svg { width: 100%; height: auto; }
+.water__pool { fill: #e9f1fb; stroke: #c4d6ee; }
+.water__wave { fill: none; stroke: #9db8dc; stroke-width: 1.5; }
+.water__mark { fill: #fff; stroke: var(--navy); stroke-width: 2; }
+.water__lab { font-size: 10px; fill: var(--tx-2); text-anchor: middle; font-family: var(--font); }
+.water__lab--start { fill: var(--navy); font-weight: 700; }
+.water__lab--stand { fill: #fff; font-weight: 700; }
+.water__start { stroke: var(--navy); stroke-width: 2; stroke-dasharray: 5 4; }
+.water__startHead { fill: var(--navy); }
+.water__stand { fill: var(--navy); }
+.water__wind { stroke-width: 7; stroke-linecap: round; }
+.water__wind--tail { stroke: var(--green); } .water__head--tail { fill: var(--green); }
+.water__wind--head { stroke: var(--red); } .water__head--head { fill: var(--red); }
+.water__wind--side { stroke: #6c7a91; } .water__head--side { fill: #6c7a91; }
+.water__n { fill: var(--tx-2); }
+.water__dl { display: flex; flex-direction: column; gap: 6px; }
+.water__dl div { display: flex; align-items: baseline; gap: 10px; }
+.water__dl dt { font-size: 12px; color: var(--tx-3); width: 36px; }
+.water__dl dd { font-size: 14px; }
+.water__dl dd b { font-family: var(--num); font-size: 24px; font-weight: 500; margin-right: 2px; }
+.water__dl dd small { color: var(--tx-3); margin-left: 6px; }
+.water__help { font-size: 12px; color: var(--tx-2); line-height: 1.6; margin-top: 4px; }
+@media (max-width: 600px) { .water__body { grid-template-columns: 1fr; gap: 8px; } }

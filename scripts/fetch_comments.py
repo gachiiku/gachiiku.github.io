@@ -112,7 +112,27 @@ def miyajima():
     return {'source': 'ボートレース宮島 公式サイト', 'url': 'https://www.boatrace-miyajima.com/', 'racers': racers, 'merge': True}
 
 
-FETCHERS = {13: amagasaki, 17: miyajima, 21: ashiya, 24: omura}
+def suminoe():
+    """住之江: 関西スポーツ新聞5社の選手コメントサイト（レースごとにJSON）"""
+    base = 'https://boatrace-sp.jp/suminoe_yosou_comment/get_data.php?target=&race_no={r}&date=&open='
+    racers, paper = {}, ''
+    for r in range(1, 13):
+        try:
+            d = json.loads(get(base.format(r=r)))
+        except Exception:
+            continue
+        paper = d.get('paper') or paper
+        for boats in d.get('program') or []:
+            for b in boats:
+                t = clean(b.get('comment') or '')
+                if b.get('racer_id') and t:
+                    racers[str(b['racer_id'])] = {'c': t, 'm': ''}
+        time.sleep(0.3)
+    src = f'関西スポーツ新聞5社（{paper}）・ボートレース住之江' if paper else '関西スポーツ新聞5社・ボートレース住之江'
+    return {'source': src, 'url': 'https://boatrace-sp.jp/suminoe_yosou_comment/', 'racers': racers}
+
+
+FETCHERS = {12: suminoe, 13: amagasaki, 17: miyajima, 21: ashiya, 24: omura}
 
 
 def main():

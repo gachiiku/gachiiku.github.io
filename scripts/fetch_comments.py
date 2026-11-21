@@ -19,6 +19,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / 'data' / 'comments.json'
+ARC = ROOT / 'data' / 'cmt'  # 場ごとの過去のコメント
 TODAY = ROOT / 'data' / 'today.json'
 UA = 'Mozilla/5.0 (compatible; gachiiku-data/1.0)'
 
@@ -173,7 +174,27 @@ def main():
     tmp = OUT.with_suffix('.tmp')
     tmp.write_text(json.dumps(data, ensure_ascii=False, separators=(',', ':')), encoding='utf-8')
     tmp.replace(OUT)
+    archive(date, venues)
     print(f'選手コメント: {len(venues)}場')
+
+
+def archive(date, venues):
+    """過去の分も残す: data/cmt/<場>.json に日付ごとに貯める（モーター機歴などで過去のコメントを見るため）
+    {"source": "...", "url": "...", "days": {"YYYYMMDD": {"登番": {"c": "コメント", "m": "場のモーター評価"}}}}"""
+    ARC.mkdir(parents=True, exist_ok=True)
+    for jcd, v in venues.items():
+        p = ARC / f'{jcd}.json'
+        try:
+            a = json.loads(p.read_text(encoding='utf-8')) if p.exists() else {}
+        except Exception:
+            a = {}
+        days = a.get('days', {})
+        day = days.get(date, {})
+        for no, x in v.get('racers', {}).items():
+            day[no] = {k: x[k] for k in ('c', 'm') if x.get(k)}
+        days[date] = day
+        out = {'source': v.get('source', ''), 'url': v.get('url', ''), 'days': dict(sorted(days.items()))}
+        p.write_text(json.dumps(out, ensure_ascii=False, separators=(',', ':')), encoding='utf-8')
 
 
 if __name__ == '__main__':

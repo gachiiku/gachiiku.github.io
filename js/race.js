@@ -450,9 +450,9 @@ window.WAKE_READY.then((first) => {
     $('#mo-title').textContent = `${VN[jcd]} ${m}号機`;
     $('#mo-meta').textContent = 'モーター機歴';
     $('#mo-body').innerHTML = '<p class="empty">読み込み中…</p>';
-    const d = await getJSON(`data/motors/${jcd}/${m}.json`);
+    const [d, cm] = await Promise.all([getJSON(`data/motors/${jcd}/${m}.json`), getJSON(`data/cmt/${jcd}.json`)]);
     if (!d) { $('#mo-body').innerHTML = '<p class="empty">このモーターの機歴はまだありません。</p>'; return; }
-    $('#mo-body').innerHTML = motorBody(d);
+    $('#mo-body').innerHTML = motorBody(d, cm);
     $('#mo-body').scrollTop = 0;
   }
   function closeMotor() {
@@ -461,7 +461,16 @@ window.WAKE_READY.then((first) => {
   }
   const ymdS = (x) => `${x.slice(0, 4)}/${+x.slice(4, 6)}/${+x.slice(6, 8)}`;
   const posS = (p) => (typeof p === 'number' ? p : String(p || '—').replace(/\d/, ''));
-  function motorBody(d) {
+  // その節にその選手が出していたコメント（場の公式サイトから毎日残しているもの）
+  function serComments(cm, s) {
+    if (!cm || !cm.days) return '';
+    const list = Object.entries(cm.days).filter(([dt]) => dt >= s.from && dt <= s.to)
+      .map(([dt, day]) => [dt, day[String(s.no)]]).filter(([, x]) => x && x.c);
+    if (!list.length) return '';
+    return `<div class="mo-cmt"><h5>選手コメント <small>${esc(cm.source || '')}より</small></h5><ul>${list.map(([dt, x]) =>
+      `<li><span>${+dt.slice(4, 6)}/${+dt.slice(6)}</span><p>「${esc(x.c)}」${x.m ? `<small>場のモーター評価 ${esc(x.m)}</small>` : ''}</p></li>`).join('')}</ul></div>`;
+  }
+  function motorBody(d, cm) {
     const A = d.summary.all, M1 = d.summary.m1;
     const e = mev[`${d.jcd}-${d.motor}`];
     const card = (t, a) => `<div class="mo-sum"><h5>${t}</h5><dl>
@@ -479,6 +488,7 @@ window.WAKE_READY.then((first) => {
       <h4 class="card__h"><span class="tag tag--g ${s.grade === 'SG' || s.grade === 'G1' ? 'is-big' : ''}">${s.grade}</span>${s.title}
         <small>${+s.from.slice(4, 6)}/${+s.from.slice(6)}〜${+s.to.slice(4, 6)}/${+s.to.slice(6)}</small></h4>
       <p class="mo-who"><a href="players.html#r/${s.no}">${s.name || s.no}</a> <small>${s.no}${s.cls ? '・' + s.cls : ''}</small></p>
+      ${serComments(cm, s)}
       <div class="rp-tbl-wrap"><table class="rp-tbl mo-tbl"><thead><tr><th>日付</th><th>R</th><th>レース</th><th>枠</th><th>進入</th><th>ST</th><th>展示</th><th>着</th><th>映像</th></tr></thead>
       <tbody>${s.runs.map(([dt, rr, nm, ln, c, st, pos, ex, exr]) => `<tr class="${pos === 1 ? 'is-win' : ''}">
         <td>${+dt.slice(4, 6)}/${+dt.slice(6)}</td><td>${rr}R</td><td class="mo-rn">${nm}</td>
@@ -487,7 +497,7 @@ window.WAKE_READY.then((first) => {
         <td>${ex ? ex.toFixed(2) : '—'}<small>${exr ? exr + '位' : ''}</small></td>
         <td>${typeof pos === "number" ? `<span class="pos pos--${pos}">${pos}</span>` : `<span class="pos pos--x">${posS(pos)}</span>`}</td>
         <td><button class="vbtn vbtn--sm" data-video="${d.jcd}-${dt}-${rr}" aria-label="映像">▶</button></td></tr>`).join('')}</tbody></table></div></div>`).join('');
-    return `${evalHtml}<p class="rp-span">使用開始 ${ymdS(d.start)} 〜 ${ymdS(d.last)} の全出走（${d.series.length}節）。▶を押すと公式（BOATCAST）の映像が別のタブで開きます。貢献P＝そのモーターで取った得点と、乗った選手のふだんの勝率との差（プラスほど選手の実力以上に走っている）。</p>
+    return `${evalHtml}<p class="rp-span">使用開始 ${ymdS(d.start)} 〜 ${ymdS(d.last)} の全出走（${d.series.length}節）。${cm ? '選手コメントは場の公式サイトが出しているものを、GACHIIKUが2026/11/21から毎日残しています。' : ''}▶を押すと公式（BOATCAST）の映像が別のタブで開きます。貢献P＝そのモーターで取った得点と、乗った選手のふだんの勝率との差（プラスほど選手の実力以上に走っている）。</p>
       <div class="mo-sums">${card('使用開始から', A)}${card('直近1ヶ月', M1)}</div>${ser || '<p class="empty">出走記録がありません</p>'}`;
   }
   function routeMotor() {

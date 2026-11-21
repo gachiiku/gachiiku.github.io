@@ -155,7 +155,8 @@
   function renderRacer(r, s) {
     const ev = r.eval || {};
     const total = meta ? meta.active : null;
-    $('#rp-meta').innerHTML = `登番 ${r.no}・${r.grad}期・${r.branch}支部`;
+    const base = location.pathname.includes('/r/') ? '' : 'r/';
+    $('#rp-meta').innerHTML = `登番 ${r.no}・${r.grad}期・${r.branch}支部　<a class="rp-share" href="${base}${r.no}.html">この選手のページ</a>`;
     $('#rp-title').innerHTML = `${r.name} <small>${r.kana}</small>`;
     const birth = r.birth ? `${+r.birth.slice(5, 7)}月${+r.birth.slice(8)}日生` : '';
 

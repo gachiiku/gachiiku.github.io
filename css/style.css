@@ -946,3 +946,29 @@ a.en__who:hover b { color: var(--navy); text-decoration: underline; }
 .pos--x { border-style: dashed; font-size: 12px; color: var(--tx-3); }
 .rp-runs .pos { width: 26px; height: 26px; font-size: 15px; margin-top: 2px; }
 @media (max-width: 600px) { .pos { width: 24px; height: 24px; font-size: 14px; } }
+
+/* 選手の静的ページ（検索向け） */
+.sp { max-width: 1000px; margin: 0 auto; padding: 20px 24px 40px; display: flex; flex-direction: column; gap: 14px; }
+.sp-crumb { font-size: 12px; color: var(--tx-3); }
+.sp-crumb a { color: var(--navy); text-decoration: underline; }
+.sp-h1 { font-size: 30px; font-weight: 900; line-height: 1.3; }
+.sp-h1 small { display: block; font-size: 13px; font-weight: 500; color: var(--tx-3); }
+.sp-lead { font-size: 14px; color: var(--tx-2); }
+.sp .rp-kpis { margin-top: 0; }
+.sp-cta { align-self: flex-start; padding: 12px 18px; border-radius: var(--r); background: var(--navy); color: #fff; font-weight: 700; font-size: 15px; }
+.sp-cta:hover { background: #0b2247; }
+.sp-tbl td, .sp-tbl th { text-align: center !important; }
+.sp-tbl .ln { width: 24px; height: 24px; font-size: 14px; }
+.sp-list { list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 14px; line-height: 1.6; }
+.sp-peers { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 14px; }
+.sp-peers a { color: var(--navy); text-decoration: underline; }
+@media (max-width: 600px) { .sp { padding: 16px 16px 32px; } .sp-h1 { font-size: 24px; } .sp-cta { align-self: stretch; text-align: center; } }
+
+/* トップの説明文 */
+.about { max-width: 1280px; margin: 56px auto 0; padding: 0 24px; }
+.about h2 { font-size: 16px; font-weight: 900; margin-bottom: 8px; }
+.about p { font-size: 13px; color: var(--tx-2); line-height: 1.9; max-width: 900px; }
+.about ul { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 8px; list-style: none; font-size: 13px; }
+.about a { color: var(--navy); text-decoration: underline; }
+@media (max-width: 600px) { .about { padding: 0 16px; margin-top: 40px; } }
+.rp-share { margin-left: 6px; color: var(--navy); text-decoration: underline; font-size: 12px; }

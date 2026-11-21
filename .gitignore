@@ -8,3 +8,5 @@ __pycache__/
 data/racers/
 *.tmp
 data/motors/
+r/
+/sitemap.xml

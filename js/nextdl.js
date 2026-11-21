@@ -4,6 +4,7 @@
    ========================================================= */
 (() => {
   const el = document.getElementById('next-dl');
+  const base = (document.currentScript && document.currentScript.dataset.base) || '';  // サブフォルダのページ用
   if (!el) return;
   const pad = (n) => String(n).padStart(2, '0');
   let races = [];  // [{name, jcd, no, deadline(分)}]
@@ -11,7 +12,7 @@
 
   async function load() {
     try {
-      const d = await fetch('data/today.json', { cache: 'no-store' }).then((r) => r.json());
+      const d = await fetch(base + 'data/today.json', { cache: 'no-store' }).then((r) => r.json());
       const t = new Date();
       day = d.date;
       const today = `${t.getFullYear()}${pad(t.getMonth() + 1)}${pad(t.getDate())}`;
@@ -29,7 +30,7 @@
     const left = next.deadline * 60 - now;
     const h = Math.floor(left / 3600), m = Math.floor(left % 3600 / 60), s = left % 60;
     el.hidden = false;
-    el.href = `race.html?j=${next.jcd}&r=${next.no}`;
+    el.href = `${base}race.html?j=${next.jcd}&r=${next.no}`;
     el.classList.toggle('is-hot', left < 300);
     el.innerHTML = `<small>次の締切</small><span class="hdr__nrace">${next.name} ${next.no}R</span>`
       + `<b>${h ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`}</b>`;

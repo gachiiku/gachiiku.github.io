@@ -333,8 +333,14 @@
       $('#by').value = ls.get('gachiiku_tag_by');
       if (tok()) $('#tok-msg').textContent = 'この端末には鍵が保存されています。';
       else $('#tokbox').open = true;
-      const y = new Date(Date.now() - 86400000);
-      $('#date').value = `${y.getFullYear()}-${String(y.getMonth() + 1).padStart(2, '0')}-${String(y.getDate()).padStart(2, '0')}`;
+      // 記録が入っている一番新しい日を開く（翌朝に入るので、未明は前々日になる）
+      const iso = (t) => `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
+      for (let i = 1; i <= 7; i++) {
+        const y = new Date(Date.now() - i * 86400000), d = ymd(iso(y));
+        $('#date').value = iso(y);
+        const r = await fetch(`data/hist/${d.slice(0, 4)}/${d}.json.gz`, { method: 'HEAD' }).catch(() => null);
+        if (r && r.ok) break;
+      }
       try {
         const ix = await fetch('data/racers/index.json').then((r) => r.json());
         const ni = ix.cols.indexOf('no'), nn = ix.cols.indexOf('name');

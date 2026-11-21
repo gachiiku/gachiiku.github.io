@@ -326,7 +326,7 @@
       `<button data-ropt="course:${k}" class="${+ropt.course === k ? 'is-on' : ''}"><span class="ln ln-${k}">${k}</span></button>`).join('')}</div>`;
     const list = rows.map(({ jcd, grade, u: [d, day, r, lane, , st, pos, name, strank, kim, order] }) => `<tr class="${pos === 1 ? 'is-win' : ''}">
         <td>${+d.slice(4, 6)}/${+d.slice(6)}</td>
-        <td class="cr-v">${VENUES[jcd]} ${r}R<small>${grade !== '一般' ? grade + '・' : ''}${name}</small></td>
+        <td class="cr-v">${VENUES[jcd]} ${r}R${c === 3 && window.GTAG && GTAG.isKado(`${d}-${jcd}-${r}`) ? '<span class="cr-kado">3角</span>' : ''}<small>${grade !== '一般' ? grade + '・' : ''}${name}</small></td>
         <td><span class="ln ln-${lane}">${lane}</span></td>
         <td>${st == null ? '—' : st < 0 ? 'F' + st2(-st) : st2(st)}<small>${strank ? strank + '位' : ''}</small></td>
         <td>${posBadge(pos)}</td>
@@ -337,7 +337,7 @@
       <p class="cr-sum"><span>${c}コース <b>${rows.length}</b>走</span><span>1着率 <b>${rate(1)}</b>%</span><span>2連対率 <b>${rate(2)}</b>%</span><span>3連対率 <b>${rate(3)}</b>%</span></p>
       ${rows.length ? `<div class="rp-tbl-wrap cr-wrap"><table class="rp-tbl mo-tbl cr-tbl"><thead><tr><th>日付</th><th>レース</th><th>枠</th><th>ST</th><th>着</th><th>決まり手</th><th>3連単</th><th>映像</th></tr></thead>
       <tbody>${list}</tbody></table></div>` : '<p class="empty">このコースで走ったレースはありません</p>'}
-      <p class="rp-def">決まり手は1着になった艇のもの（<b class="k-gain">青</b>＝自分の勝ち、<b class="k-lose">赤</b>＝負けたときの相手）。</p></div>`;
+      <p class="rp-def">決まり手は1着になった艇のもの（<b class="k-gain">青</b>＝自分の勝ち、<b class="k-lose">赤</b>＝負けたときの相手）。<span class="cr-kado">3角</span>＝レース映像で、3コースからダッシュに引いた（3カド）と確認したレース。</p></div>`;
   }
 
   function kimCard(s) {

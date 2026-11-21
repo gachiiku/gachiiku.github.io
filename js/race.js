@@ -206,6 +206,7 @@ window.WAKE_READY.then((first) => {
       : r.result ? `<div class="result"><span class="result__l">結果</span>
         <div class="result__o">${r.result.order.map((l) => `<span class="ln ln-${l}">${l}</span>`).join('<i>-</i>')}</div>
         <span class="result__p ${r.result.payout >= 10000 ? 'is-man' : ''}">3連単 ${yen(r.result.payout)}</span>
+        ${window.GTAG && GTAG.isKado(`${date}-${v.id}-${r.no}`) ? '<span class="result__kado" title="レース映像で、3コースの艇がダッシュに引いたことを確認">3角</span>' : ''}
         <button class="vbtn" data-video="${v.id}-${date}-${r.no}">▶ レース映像 ↗</button></div>` : '';
 
     // スタート展示の進入（枠なりかどうか、前づけ・動いた艇を目立たせる）

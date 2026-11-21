@@ -150,6 +150,10 @@ def main(out_dir=ROOT):
         'total': total,  # 全選手の合計（各指標は1レースにつき1人だけに入るので、合計＝レース数）
         'racers': racers,
     }
+    # 過去のレース表示用：映像で3角（3カド）と判定したレースの一覧
+    marks = {'kado': sorted(k for k, t in tags.items() if t.get('k') == 1)}
+    (Path(out_dir) / 'data').mkdir(parents=True, exist_ok=True)
+    (Path(out_dir) / 'data' / 'tagmarks.json').write_text(json.dumps(marks, separators=(',', ':')), encoding='utf-8')
     out = Path(out_dir) / 'data' / 'tagstats.json'
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(data, ensure_ascii=False, separators=(',', ':')), encoding='utf-8')

@@ -5,9 +5,12 @@
 (() => {
   const MIN = 20; // これより少ないときは「参考値」
   const PERIODS = [['3m', '3ヶ月'], ['6m', '半年'], ['1y', '1年'], ['all', '全期間']];
-  let data = null, loading = null;
-  const load = () => loading || (loading = fetch('data/tagstats.json', { cache: 'no-store' })
-    .then((r) => (r.ok ? r.json() : null)).then((d) => { data = d; return d; }).catch(() => null));
+  let data = null, loading = null, kadoSet = new Set();
+  const getJson = (u) => fetch(u, { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+  const load = () => loading || (loading = Promise.all([getJson('data/tagstats.json'), getJson('data/tagmarks.json')])
+    .then(([d, m]) => { data = d; kadoSet = new Set((m && m.kado) || []); return d; }));
+  // 映像で3角と判定したレースか（key = YYYYMMDD-場-R）
+  const isKado = (key) => kadoSet.has(key);
 
   const rate = (x, n) => (n ? (x / n) * 100 : null);
   const p1 = (v) => (v == null ? '—' : `${v.toFixed(1)}%`);
@@ -97,5 +100,5 @@
       .map(([k, , label, , , name]) => [label, `${name} ${p1(rate(s[k].x, s[k].n))}（${s[k].x}/${s[k].n}走・直近1年）`]);
   }
 
-  window.GTAG = { load, card, cell, has, marks, DEFS, PERIODS, tip };
+  window.GTAG = { load, card, cell, has, marks, isKado, DEFS, PERIODS, tip };
 })();

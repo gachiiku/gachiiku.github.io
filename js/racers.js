@@ -348,11 +348,12 @@
         <th>${l1}<small>${l2}</small></th>${C6.map((c) => {
           const y = K['1y'][c - 1], h = K['6m'][c - 1];
           const lose = (c === 1 && i > 0) || (c > 1 && i === 0);
-          return `<td class="${lose ? 'is-lose' : 'is-gain'}"><b>${y[0] ? pct(y[i + 1]) : '—'}</b><small>${h[0] ? pct(h[i + 1]) : '—'}</small></td>`;
+          const cnt = (a) => Math.round(a[i + 1] * a[0] / 100);  // ％×出走数＝回数
+          return `<td class="${lose ? 'is-lose' : 'is-gain'}"><b>${y[0] ? pct(y[i + 1]) : '—'}</b>${y[0] ? `<small class="kc">${cnt(y)}/${y[0]}</small>` : ''}<small>${h[0] ? `${pct(h[i + 1])}<i class="kc">${cnt(h)}/${h[0]}</i>` : '—'}</small></td>`;
         }).join('')}</tr>`).join('')}
-        <tr class="rp-kim__n"><th>出走数</th>${C6.map((c) => `<td>${K['1y'][c - 1][0]}<small>${K['6m'][c - 1][0]}</small></td>`).join('')}</tr>
+        <tr class="rp-kim__n"><th>出走数</th>${C6.map((c) => { const n = K['1y'][c - 1][0]; return `<td class="${n && n < 10 ? 'is-few' : ''}">${n}${n && n < 10 ? '<em>少</em>' : ''}<small>${K['6m'][c - 1][0]}</small></td>`; }).join('')}</tr>
       </tbody></table></div>
-      <p class="rp-def">上：直近1年／下：直近6ヶ月（%）。行の左の名前は1コース、右の名前は2〜6コースのとき。<b class="k-lose">赤</b>は負け方（1コースで差され・捲られ、2〜6コースで1コースに逃げられた）、<b class="k-gain">青</b>は自分が1着になった決まり手。</p></div>`;
+      <p class="rp-def">上：直近1年／下：直近6ヶ月（%）。％の下の「回数/出走数」は、そのコースで何走中何回か（出走数10走未満は「少」）。行の左の名前は1コース、右の名前は2〜6コースのとき。<b class="k-lose">赤</b>は負け方（1コースで差され・捲られ、2〜6コースで1コースに逃げられた）、<b class="k-gain">青</b>は自分が1着になった決まり手。</p></div>`;
     return kim;
   }
 

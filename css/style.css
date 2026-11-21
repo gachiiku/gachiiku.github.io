@@ -1155,3 +1155,9 @@ a.en__who:hover b { color: var(--navy); text-decoration: underline; }
 .rc-tbl tr.k-runs td b { font-size: 15px; }
 .rc-tbl tr.k-runs td.is-few { color: var(--red); }
 .rc-tbl tr.k-runs td.is-few small { color: var(--red); }
+
+/* 選手ページ 枠別決まり手：回数／出走数 */
+.rp-kim td small.kc { display: block; font-size: 10px; color: var(--tx-3); margin: 0 0 2px; }
+.rp-kim td i.kc { display: block; font-style: normal; font-size: 9.5px; color: var(--tx-3); }
+.rp-kim__n td.is-few { color: var(--red); }
+.rp-kim__n td em { font-style: normal; font-size: 10px; font-weight: 900; margin-left: 2px; }

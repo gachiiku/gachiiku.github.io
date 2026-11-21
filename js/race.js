@@ -378,8 +378,14 @@ window.WAKE_READY.then((first) => {
       const k = kimOf(x);
       const c1 = cOf(x) === 1;
       const lose = (c1 && i > 0) || (!c1 && i === 0);
-      return `<td class="${lose ? 'k-lose-c' : 'k-gain-c'}">${k && k[0] ? `<small>${c1 ? l1 : l2}</small><b>${f1(k[i + 1])}</b>` : '—'}</td>`;
+      // ％の下に「何回／何走」（サンプルの多い少ないを見るため）
+      const cnt = k && k[0] ? Math.round(k[i + 1] * k[0] / 100) : 0;
+      return `<td class="${lose ? 'k-lose-c' : 'k-gain-c'}">${k && k[0] ? `<small>${c1 ? l1 : l2}</small><b>${f1(k[i + 1])}</b><small class="k-n">${cnt}/${k[0]}走</small>` : '—'}</td>`;
     }).join('')}</tr>`).join('')
+      + `<tr class="k-runs"><th>出走数<br><small>このコース</small></th>${boats.map((x) => {
+        const k = kimOf(x);
+        return `<td class="${k && k[0] && k[0] < 10 ? 'is-few' : ''}">${k && k[0] ? `<b>${k[0]}</b><small>走${k[0] < 10 ? '・少' : ''}</small>` : '—'}</td>`;
+      }).join('')}</tr>`;
 
     const ordSeg = exMoved ? `<div class="ord-seg"><span>出走表の並び</span><div class="seg seg--sm">
       <button data-order="course" class="${order() === 'course' ? 'is-on' : ''}">進入順（${src}）</button>
@@ -409,7 +415,7 @@ window.WAKE_READY.then((first) => {
         ${row('ボート<br><small>No / 2連率</small>', ({ b }) => `<small>#${b.boatNo}</small>${f1(b.boat2)}`)}
         ${row('展示<br><small>タイム / チルト</small>', ({ b }) => (b.exTime ? `${num(b.exTime, f2, bestEx)}<small class="${b.tilt >= 3 && v.id !== 3 ? 'is-tilt3' : ''}">${b.tilt != null ? (b.tilt > 0 ? '+' : '') + b.tilt : ''}</small>` : '—'))}
         ${boats.some(({ b }) => b.exCourse) ? row('展示進入<br><small>コース / ST</small>', ({ b }) => (b.exCourse ? `<b class="${b.exCourse !== b.lane ? 'is-moved' : ''}">${b.exCourse}<small>コース</small></b><small>${b.exSt == null ? '' : b.exSt < 0 ? 'F' + st2(-b.exSt) : st2(b.exSt)}</small>` : '—')) : ''}
-        ${sec('勝ち筋・負け筋', `${bigRace ? 'SG・G1のレースだけ・' : ''}直近1年・${exMoved ? `${src}の進入コースで表示` : '枠なり進入のとき'}`)}
+        ${sec('勝ち筋・負け筋', `${bigRace ? 'SG・G1のレースだけ・' : ''}直近1年・${exMoved ? `${src}の進入コースで表示` : '枠なり進入のとき'}・％の下は回数／出走数（10走未満は少）`)}
         ${kimRows}
         ${window.GTAG && GTAG.has(boats.map(({ b }) => b.no)) ? sec('攻め方指標', '映像タグから集計・直近1年') + GTAG.DEFS.map(([k, name, cond, def, short]) =>
           row(`${short[0]}${GTAG.tip(def())}<br><small>${short[1]}</small>`, ({ b }) => GTAG.cell(b.no, k))).join('') : ''}

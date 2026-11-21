@@ -203,6 +203,26 @@ window.WAKE_READY.then((first) => {
         <span class="result__p ${r.result.payout >= 10000 ? 'is-man' : ''}">3連単 ${yen(r.result.payout)}</span>
         <button class="vbtn" data-video="${v.id}-${date}-${r.no}">▶ レース映像 ↗</button></div>` : '';
 
+    // 動きのマーク：前＝前づけ（枠より内のコースに入る）、握・3角・変全＝映像タグの攻め方指標
+    const maeRate = (s) => {
+      if (!s || !s.lane) return null;
+      let tot = 0, mae = 0;
+      s.lane.forEach((a, i) => { if (!i) return; const c = a.course.slice(0, 6); tot += c.reduce((x, y) => x + y, 0); mae += c.slice(0, i).reduce((x, y) => x + y, 0); });
+      return tot >= 30 ? { r: mae / tot * 100, n: tot } : null;
+    };
+    // 入りそうなコース＝その枠から実際に一番多く入ったコース（記録がなければ枠なり）
+    const likelyCourse = (b, s) => {
+      const c = s && s.lane && s.lane[b.lane - 1] ? s.lane[b.lane - 1].course.slice(0, 6) : null;
+      if (!c || !c.some((n) => n)) return b.lane;
+      return c.indexOf(Math.max(...c)) + 1;
+    };
+    const markHtml = (b, s) => {
+      const out = [];
+      const m = b.lane > 1 ? maeRate(s) : null;
+      if (m && m.r >= 15) out.push(['前', `前づけ：2〜6枠のとき枠より内のコースに入った割合 ${m.r.toFixed(1)}%（${m.n}走）`]);
+      if (window.GTAG) out.push(...GTAG.marks(b.no, likelyCourse(b, s)));
+      return out.length ? `<span class="mk-row">${out.map(([l, t]) => `<span class="mk mk--${l === '前' ? 'mae' : 'tag'}" data-tip="${t}" role="button" tabindex="0">${l}</span>`).join('')}</span>` : '';
+    };
     const col = (fn, cls = '') => boats.map((x) => `<td class="${cls}">${fn(x)}</td>`).join('');
     const sec = (title, note) => `<tr class="rc-sec"><th colspan="7">${title}${note ? `<small>${note}</small>` : ''}</th></tr>`;
     const row = (label, fn, cls = '') => `<tr><th>${label}</th>${col(fn, cls)}</tr>`;
@@ -267,7 +287,7 @@ window.WAKE_READY.then((first) => {
     const table = `<div class="rc-scroll"><table class="rc-tbl">
       <thead><tr><th>枠</th>${boats.map(({ b }) => `<th><span class="ln ln-${b.lane}">${b.lane}</span></th>`).join('')}</tr></thead>
       <tbody>
-        ${row('選手', ({ b, p }) => `<a class="rc-name" href="#r/${b.no}"><b>${b.name}</b><small>${b.no}${p ? `・${p.grad}期` : ''}</small></a>`, 'rc-who')}
+        ${row('選手', ({ b, p, s }) => `<a class="rc-name" href="#r/${b.no}"><b>${b.name}</b><small>${b.no}${p ? `・${p.grad}期` : ''}</small></a>${markHtml(b, s)}`, 'rc-who')}
         ${row('級別<br><small>年齢・支部</small>', ({ b, p }) => `<span class="cls cls-${b.cls}">${b.cls}</span><small>${b.age}歳・${b.branch}</small>`)}
         ${row('体重', ({ b }) => `${b.weight ?? '—'}<small>kg</small>`)}
         ${row('F / L', ({ b }) => `<span class="${b.f ? 'is-warn' : ''}">F${b.f || 0}</span> / L${b.l || 0}`)}
@@ -310,7 +330,7 @@ window.WAKE_READY.then((first) => {
 
     const hasStats = boats.some((x) => x.s);
     return cond + result + table
-      + `<p class="rc-note">赤字はそのレースの6艇で一番良い数字。コース別データは各選手が枠番どおりのコースに入ったときの成績です${hasStats ? `（集計 ${boats.find((x) => x.s).s.histSpan.map((d) => `${d.slice(0, 4)}/${+d.slice(4, 6)}/${+d.slice(6)}`).join('〜')}）` : ''}。</p>`;
+      + `<p class="rc-note">赤字はそのレースの6艇で一番良い数字。選手名の下のマーク：<b>前</b>＝前づけ（2〜6枠で枠より内に入る割合15%以上）、<b>握</b>＝2コースに入りそうで2コース握り率50%以上、<b>3角</b>＝3コースに入りそうでダッシュに引く率（3カド率）40%以上、<b>変全</b>＝3コースに入りそうで変わり全速率50%以上（握・3角・変全は映像タグ・直近1年。入りそうなコースはその枠から一番多く入ったコース）。マークを押すと数字が出ます。コース別データは各選手が枠番どおりのコースに入ったときの成績です${hasStats ? `（集計 ${boats.find((x) => x.s).s.histSpan.map((d) => `${d.slice(0, 4)}/${+d.slice(4, 6)}/${+d.slice(6)}`).join('〜')}）` : ''}。</p>`;
   }
 
   // ---------- モーター機歴ページ（#m/番号） ----------

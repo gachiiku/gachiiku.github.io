@@ -1058,3 +1058,9 @@ a.en__who:hover b { color: var(--navy); text-decoration: underline; }
   .tgx__n small { display: inline; margin-left: 8px; }
   .tgx__sub { order: 5; }
 }
+
+/* 動きのマーク（前・握・3角・変全） */
+.mk-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 3px; margin-top: 4px; }
+.mk { display: inline-block; min-width: 20px; padding: 1px 4px; border-radius: 3px; font-size: 11px; font-weight: 900; line-height: 1.4; cursor: help; }
+.mk--mae { background: var(--red); color: #fff; }
+.mk--tag { background: var(--navy); color: #fff; }

@@ -77,13 +77,25 @@
     pop.style.top = `${r.bottom + 6 + h > window.innerHeight ? r.top - h - 6 : r.bottom + 6}px`;
   };
   document.addEventListener('click', (e) => {
-    const t = e.target.closest('.tip');
+    const t = e.target.closest('[data-tip]');
     if (t) { e.preventDefault(); e.stopPropagation(); if (pop && pop.textContent === t.dataset.tip) hide(); else show(t); return; }
     hide();
   }, true);
-  document.addEventListener('mouseover', (e) => { const t = e.target.closest && e.target.closest('.tip'); if (t && matchMedia('(hover: hover)').matches) show(t); });
-  document.addEventListener('mouseout', (e) => { if (e.target.closest && e.target.closest('.tip') && matchMedia('(hover: hover)').matches) hide(); });
+  document.addEventListener('mouseover', (e) => { const t = e.target.closest && e.target.closest('[data-tip]'); if (t && matchMedia('(hover: hover)').matches) show(t); });
+  document.addEventListener('mouseout', (e) => { if (e.target.closest && e.target.closest('[data-tip]') && matchMedia('(hover: hover)').matches) hide(); });
   window.addEventListener('scroll', () => { if (Date.now() - shownAt > 400) hide(); }, true);
 
-  window.GTAG = { load, card, cell, has, DEFS, PERIODS, tip };
+  // レースページの選手名の横に付けるマーク（そのコースに入りそうなときに出やすい動き。直近1年・映像タグ）
+  //   握＝2コースに入りそうで 2コース握り率50%以上（10走以上）
+  //   3角＝3コースに入りそうで 3カド率40%以上（10走以上）… 3コースに入った選手がダッシュに引く
+  //   変全＝3コースに入りそうで 変わり全速率50%以上（5走以上）
+  const MARKS = [['g2', 2, '握', 10, 50, '2コース握り率'], ['k3', 3, '3角', 10, 40, '3カド率'], ['z3', 3, '変全', 5, 50, '変わり全速率']];
+  function marks(no, course) {
+    const s = get(no, '1y');
+    if (!s) return [];
+    return MARKS.filter(([k, c, , min, th]) => course === c && s[k].n >= min && rate(s[k].x, s[k].n) >= th)
+      .map(([k, , label, , , name]) => [label, `${name} ${p1(rate(s[k].x, s[k].n))}（${s[k].x}/${s[k].n}走・直近1年）`]);
+  }
+
+  window.GTAG = { load, card, cell, has, marks, DEFS, PERIODS, tip };
 })();

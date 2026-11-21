@@ -54,7 +54,20 @@ def omura():
     return {'source': 'ボートレース大村 公式サイト', 'url': url, 'racers': racers}
 
 
-FETCHERS = {24: omura}
+def ashiya():
+    """芦屋: 選手コメント一覧（登録番号つきの表）"""
+    url = 'https://www.boatrace-ashiya.com/modules/raceinfo/?page=index_racers_comment'
+    page = get(url)
+    racers = {}
+    for tr in re.findall(r'<tr>(.*?)</tr>', page, re.S):
+        no = re.search(r"<td class='col1'>(\d{4})</td>", tr)
+        c = re.search(r"class='zComment'>(.*?)</p>", tr, re.S)
+        if no and c and clean(c.group(1)):
+            racers[no.group(1)] = {'c': clean(c.group(1)), 'm': ''}
+    return {'source': 'ボートレース芦屋 公式サイト', 'url': url, 'racers': racers}
+
+
+FETCHERS = {21: ashiya, 24: omura}
 
 
 def main():

@@ -65,5 +65,9 @@ jobs:
         with:
           path: _site
 
+      # アップロード直後は GitHub 側で見つからないことがあるので少し待つ
+      - name: 反映待ち
+        run: sleep 15
+
       - id: deploy
         uses: actions/deploy-pages@v4

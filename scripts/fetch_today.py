@@ -205,6 +205,14 @@ def main():
         # 差分更新: 出走表は1日変わらないので、結果と直前情報だけ取り直す
         print(f'[{hd}] 差分更新（結果・直前情報）')
         venues = prev['venues']
+        # 前の晩に取った時点で出走表が出ていなかった場（ナイター等）を、公式の開催一覧と照らして追加する
+        held = parse_index(get(f'index?hd={hd}'))
+        for v in venues:
+            if v['id'] in held and (not v['open'] or not v['races']):
+                print(f'  追加: {v["name"]}')
+                v.update(held[v['id']])
+                v['open'] = True
+                fetch_racelists(v, hd)
         with ThreadPoolExecutor(WORKERS) as pool:
             list(pool.map(lambda v: update_live(v, hd, now_min), [v for v in venues if v['open']]))
     else:

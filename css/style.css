@@ -1087,3 +1087,16 @@ a.en__who:hover b { color: var(--navy); text-decoration: underline; }
 .exin__note b { color: var(--red); }
 .exin__def { font-size: 11px; color: var(--tx-3); margin-top: 6px; }
 @media (prefers-color-scheme: dark) { .exin.is-moved { background: transparent; } }
+
+/* 展示進入：3角（スロー2・ダッシュ4に分けて見せる） */
+.exin__tag--kado { background: #7c2d12; }
+.exin__split { display: flex; gap: 10px; align-items: flex-start; }
+.exin__grp { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.exin__gl { font-size: 11px; font-weight: 900; color: var(--tx-2); text-align: center; border-bottom: 2px solid var(--line-2); padding-bottom: 2px; }
+.exin__grp.is-dash { margin-top: 16px; }
+.exin__grp.is-dash .exin__gl { border-color: var(--red); color: var(--red); }
+.exin__row--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.exin__row--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.exin__row li.is-kado { border: 2px solid var(--red); background: #fff6f5; }
+.exin__row li.is-kado em { color: var(--red); font-size: 12px; }
+@media (prefers-color-scheme: dark) { .exin__row li.is-kado { background: transparent; } }

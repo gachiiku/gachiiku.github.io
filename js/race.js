@@ -112,6 +112,11 @@ window.WAKE_READY.then((first) => {
   const loadMotors = (j) => (motorSum[j] ? Promise.resolve() : getJSON(`data/motors/${j}.json`).then((d) => { motorSum[j] = d || { motors: {} }; }));
   const mstat = (j, m) => ((motorSum[j] || {}).motors || {})[m] || null;
 
+  // ---------- 展示の3角（スタート展示の映像を見て判定したもの。data/exkado.json） ----------
+  let exk = { races: {} };
+  const loadExKado = () => fetch('data/exkado.json', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null))
+    .then((d) => { if (d) exk = d; }).catch(() => {});
+
   // ---------- 選手コメント（各場の公式サイトから。出している場だけ） ----------
   let comments = { venues: {} };
   const loadComments = () => fetch('data/comments.json', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null))
@@ -179,7 +184,7 @@ window.WAKE_READY.then((first) => {
     syncUrl();
     renderNav(v, r);
     const my = ++seq;
-    const [data] = await Promise.all([Promise.all(r.boats.map((b) => racer(b.no))), loadMev(), loadMotors(v.id), loadComments(), window.GTAG ? GTAG.load() : null]);
+    const [data] = await Promise.all([Promise.all(r.boats.map((b) => racer(b.no))), loadMev(), loadMotors(v.id), loadComments(), loadExKado(), window.GTAG ? GTAG.load() : null]);
     if (my !== seq) return; // 途中で別のレースに切り替わった
     const boats = r.boats.map((b, i) => ({ b, s: data[i][0], p: data[i][1] }));
     $('#rc-body').innerHTML = renderBody(v, r, boats);
@@ -204,11 +209,14 @@ window.WAKE_READY.then((first) => {
         <button class="vbtn" data-video="${v.id}-${date}-${r.no}">▶ レース映像 ↗</button></div>` : '';
 
     // スタート展示の進入（枠なりかどうか、前づけ・動いた艇を目立たせる）
+    const ekOf = () => (exk.date === date ? exk.races[`${v.id}-${r.no}`] : null); // 展示映像での3角判定
+    if ((ekOf() || {}).k === 1) r.exKado = true;
     function exinCard(r) {
       const bs = r.boats.filter((b) => b.exCourse);
       if (bs.length < 6) return '';
       const order = [...bs].sort((a, b) => a.exCourse - b.exCourse);
       const moved = bs.filter((b) => b.exCourse !== b.lane);
+      const ek = ekOf();
       const kado = !!r.exKado; // 3角（3コースの艇がダッシュに引いた）。映像で確かめたときだけ入る
       const k3 = order[2];
       const notes = bs.filter((b) => b.exCourse < b.lane).map((b) => `<b>${b.lane}号艇 ${esc(b.name)}</b>が<b>${b.exCourse}コース</b>へ前づけ`);
@@ -226,7 +234,8 @@ window.WAKE_READY.then((first) => {
         <div class="exin__h"><span class="exin__l">展示進入</span>${kado ? '<span class="exin__tag exin__tag--kado">3角</span>' : ''}${moved.length ? '<span class="exin__tag">進入変化あり</span>' : kado ? '' : '<span class="exin__ok">枠なり</span>'}</div>
         ${row}
         ${changed ? `<p class="exin__note">${notes.concat(outs).join('、')}。本番も同じとは限りません。</p>` : ''}
-        <p class="exin__def">スタート展示での並び（直前情報）。3角（3カド）は公式データに出ないため、映像で確かめたときだけ表示します。</p></div>`;
+        ${ek && ek.k === 0 ? '<p class="exin__chk">3角：なし（展示の映像で確認）</p>' : ''}
+        <p class="exin__def">スタート展示での並び（直前情報）。3角（3カド）は公式データに出ないため、展示の映像をGACHIIKUで確かめて表示します${ek && ek.at ? `（${ek.at}確認）` : '（まだ確認していません）'}。</p></div>`;
     }
 
     // 動きのマーク：前＝前づけ（枠より内のコースに入る）、握・3角・変全＝映像タグの攻め方指標

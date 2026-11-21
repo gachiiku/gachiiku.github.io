@@ -1100,3 +1100,5 @@ a.en__who:hover b { color: var(--navy); text-decoration: underline; }
 .exin__row li.is-kado { border: 2px solid var(--red); background: #fff6f5; }
 .exin__row li.is-kado em { color: var(--red); font-size: 12px; }
 @media (prefers-color-scheme: dark) { .exin__row li.is-kado { background: transparent; } }
+
+.exin__chk { font-size: 12px; color: var(--tx-2); margin-top: 8px; }

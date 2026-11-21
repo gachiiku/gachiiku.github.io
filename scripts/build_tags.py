@@ -6,7 +6,7 @@
 出力: data/tagstats.json
 
 指標（分母・分子）
-  2コース握り率   分母: 2コースの判定(g)が入ったレース        分子: g=握
+  2コース握り率   分母: 1・2コースのST差が EVEN 秒以内で、2コースの判定(g)が入ったレース   分子: g=握
                   付随: 握ったとき 3コースが4着以下になった割合（3コース不利）
   3コース3カド率  分母: 3カドの判定(k)が入ったレース          分子: k=1
                   付随: 3カドのときの 3コース 1着・2連対・3連対・まくり（3コース1着かつ決まり手まくり）
@@ -24,6 +24,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 LEAD = 0.05  # スリットで先行したとみなすST差（tag.html と同じ値）
+EVEN = 0.03  # 2コース握り率は、1・2コースのST差がこれ以内（スリットで差がほとんどない）レースだけで数える
 PERIODS = {'3m': 91, '6m': 182, '1y': 365, 'all': None}
 
 
@@ -35,6 +36,16 @@ def lead_of(by):
     if str(a[4])[:1] in 'FLK' or str(b[4])[:1] in 'FLK':
         return None
     return round(a[3] - b[3], 2) >= LEAD
+
+
+def even_of(by):
+    """1コースと2コースのSTの差が EVEN 秒以内か。F・欠場などで分からなければ None"""
+    a, b = by.get(1), by.get(2)
+    if not a or not b or not isinstance(a[3], (int, float)) or not isinstance(b[3], (int, float)):
+        return None
+    if str(a[4])[:1] in 'FLK' or str(b[4])[:1] in 'FLK':
+        return None
+    return abs(round(a[3] - b[3], 2)) <= EVEN
 
 
 def top(by, c, n):
@@ -52,7 +63,7 @@ def empty():
 
 def add(acc, race, by, t):
     g, k, z = t.get('g'), t.get('k'), t.get('z')
-    if g in ('握', '差', '他') and by.get(2):
+    if g in ('握', '差', '他') and by.get(2) and even_of(by):
         a = acc(by[2][0])['g2']
         a['n'] += 1
         if g == '握':
@@ -135,7 +146,7 @@ def main(out_dir=ROOT):
                     merge(total[p], st)
     data = {
         'updatedAt': datetime.now().strftime('%Y-%m-%d %H:%M'),
-        'base': last, 'lead': LEAD, 'races': used, 'tagged': len(tags),
+        'base': last, 'lead': LEAD, 'even': EVEN, 'races': used, 'tagged': len(tags),
         'total': total,  # 全選手の合計（各指標は1レースにつき1人だけに入るので、合計＝レース数）
         'racers': racers,
     }

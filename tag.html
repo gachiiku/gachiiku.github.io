@@ -86,7 +86,7 @@
       <summary>判定のしかた</summary>
       <div class="ad-help">
         <ul>
-          <li><b>2コース</b>：1マークで、内（1コースの内側）に差したら「差し」、1コースの外を握って回ったら「握り」。スタートで大きく遅れた・転覆などでどちらでもなければ「その他」。</li>
+          <li><b>2コース</b>（1・2コースのSTの差が<span id="even-v">0.03</span>秒以内のレースだけ。スリットで差がある場合は対象外）：1マークで、内（1コースの内側）に差したら「差し」、1コースの外を握って回ったら「握り」。スタートで大きく遅れた・転覆などでどちらでもなければ「その他」。</li>
           <li><b>3カド</b>：何号艇かに関係なく、<b>3コースに入った選手</b>がダッシュ（1・2コースより後ろに引いて助走を長く取る位置）から出たら「あり」。1〜3コースが横並びのスローなら「なし」。</li>
           <li><b>変わり全速</b>：<span class="tg__lead">4先行</span> の付いたレース（4コースのSTが3コースより<span id="lead-v">0.05</span>秒以上早い）だけ。3コースが内に差さず、4コースの外を全速で回ったら「あり」、差しに回った・減速したなら「なし」。</li>
           <li>迷ったときは押さなくて大丈夫です。押していない項目は集計に入りません。もう一度押すと取り消せます。</li>
@@ -117,6 +117,7 @@
   (() => {
     const REPO = 'gachiiku/gachiiku.github.io';
     const LEAD = 0.05; // scripts/build_tags.py と同じ
+    const EVEN = 0.03; // 2コース握りは 1・2コースのST差がこれ以内のレースだけ
     const VENUES = ['', '桐生', '戸田', '江戸川', '平和島', '多摩川', '浜名湖', '蒲郡', '常滑', '津', '三国', 'びわこ', '住之江',
       '尼崎', '鳴門', '丸亀', '児島', '宮島', '徳山', '下関', '若松', '芦屋', '福岡', '唐津', '大村'];
     const Q = [
@@ -178,11 +179,17 @@
       if (/^[FLK]/.test(String(a[4])) || /^[FLK]/.test(String(b[4]))) return null;
       return Math.round((a[3] - b[3]) * 100) / 100 >= LEAD ? Math.round((a[3] - b[3]) * 100) / 100 : false;
     }
+    function evenOf(by) {
+      const a = by[1], b = by[2];
+      if (!a || !b || !isNum(a[3]) || !isNum(b[3])) return null;
+      if (/^[FLK]/.test(String(a[4])) || /^[FLK]/.test(String(b[4]))) return null;
+      return Math.abs(Math.round((a[3] - b[3]) * 100) / 100) <= EVEN;
+    }
     const keyOf = (d, jcd, r) => `${d}-${jcd}-${r}`;
     const cur = (key) => draft[key] || ((saved[key.slice(0, 6)] || {}).tags || {})[key] || {};
-    function isDone(key, lead) {
+    function isDone(key, lead, even) {
       const t = cur(key);
-      return t.g != null && t.k != null && (!lead || t.z != null);
+      return (!even || t.g != null) && t.k != null && (!lead || t.z != null);
     }
 
     function render() {
@@ -191,9 +198,9 @@
       if (!v) { $('#races').innerHTML = ''; updateBar(); return; }
       const posTxt = (p) => (isNum(p) ? `${p}着` : String(p || '').replace(/\d/, '') || '—');
       const html = v.races.map((race) => {
-        const by = byCourse(race), lead = leadOf(by), key = keyOf(d, jcd, race.r), t = cur(key);
+        const by = byCourse(race), lead = leadOf(by), even = evenOf(by), key = keyOf(d, jcd, race.r), t = cur(key);
         if (f === 'lead' && !lead) return '';
-        if (f === 'todo' && isDone(key, lead)) return '';
+        if (f === 'todo' && isDone(key, lead, even)) return '';
         const boats = [1, 2, 3, 4, 5, 6].map((c) => {
           const e = by[c];
           if (!e) return `<li><span class="c">${c}コース</span><span class="nm">—</span></li>`;
@@ -204,13 +211,14 @@
         }).join('');
         const qs = Q.map(([k, label, opts]) => {
           if (k === 'z' && !lead) return `<div><label>${label}</label><div class="tg__na">対象外（4コースが先行していない）</div></div>`;
+          if (k === 'g' && !even) return `<div><label>${label}</label><div class="tg__na">対象外（1・2コースのSTに差がある）</div></div>`;
           return `<div><label>${label}</label><div class="tsel" data-k="${k}">${opts.map(([val, l]) =>
             `<button data-v="${val}" class="${t[k] != null && String(t[k]) === String(val) ? 'is-on' : ''}">${l}</button>`).join('')}</div></div>`;
         }).join('');
-        return `<div class="tg ${draft[key] ? 'is-dirty' : ''} ${isDone(key, lead) ? 'is-done' : ''}" data-key="${key}" data-lead="${lead ? 1 : 0}">
+        return `<div class="tg ${draft[key] ? 'is-dirty' : ''} ${isDone(key, lead, even) ? 'is-done' : ''}" data-key="${key}" data-lead="${lead ? 1 : 0}" data-even="${even ? 1 : 0}">
           <div class="tg__h"><b>${race.r}R</b><span>${esc(race.name || '')}</span><span>決まり手 ${esc(race.kim || '—')}</span>
             ${lead ? `<span class="tg__lead">4先行 ${lead.toFixed(2).replace(/^0/, '')}</span>` : ''}
-            ${isDone(key, lead) ? '<span class="tg__ok">✓ 入力済み</span>' : ''}
+            ${isDone(key, lead, even) ? '<span class="tg__ok">✓ 入力済み</span>' : ''}
             <button class="vbtn" data-video="${jcd}-${d}-${race.r}">▶ 映像を見る ↗</button></div>
           <ol class="tg__boats">${boats}</ol>
           <div class="tg__q">${qs}</div></div>`;
@@ -235,7 +243,7 @@
       draft[key] = t;
       b.closest('.tsel').querySelectorAll('button').forEach((y) => y.classList.toggle('is-on', t[k] != null && y.dataset.v === String(t[k])));
       card.classList.add('is-dirty');
-      const done = isDone(key, card.dataset.lead === '1');
+      const done = isDone(key, card.dataset.lead === '1', card.dataset.even === '1');
       card.classList.toggle('is-done', done);
       updateBar();
     });

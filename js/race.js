@@ -189,17 +189,44 @@ window.WAKE_READY.then((first) => {
     syncUrl();
     renderNav(v, r);
     const my = ++seq;
-    const [data] = await Promise.all([Promise.all(r.boats.map((b) => racer(b.no))), loadMev(), loadMotors(v.id), loadComments(), loadExKado(), window.GTAG ? GTAG.load() : null]);
+    const [data] = await Promise.all([Promise.all(r.boats.map((b) => racer(b.no))), loadMev(), loadMotors(v.id), loadComments(), loadExKado(), window.GTAG ? GTAG.load() : null, loadRaceCourses(date).then((m) => {
+      const c = m && m[`${v.id}-${r.no}`];
+      if (c) r.boats.forEach((b) => { b.raceCourse = c[b.no]; });
+    })]);
     if (my !== seq) return; // 途中で別のレースに切り替わった
     const boats = r.boats.map((b, i) => ({ b, s: data[i][0], p: data[i][1] }));
     // 展示で進入が変わったら、出走表を進入順（1コース→6コース）に並べ替えられる。既定は進入順、選んだ並びは覚えておく
-    if (r.boats.some((b) => b.exCourse && b.exCourse !== b.lane) && order() === 'course') {
-      boats.sort((a, b) => (a.b.exCourse || a.b.lane) - (b.b.exCourse || b.b.lane));
+    if (r.boats.some((b) => inC(b) !== b.lane) && order() === 'course') {
+      boats.sort((a, b) => inC(a.b) - inC(b.b));
     }
     $('#rc-body').innerHTML = renderBody(v, r, boats);
     tick();
   }
 
+  // 過去の日は、公式記録（data/hist）から本番で実際に入ったコースを読む。展示の並びがない日の代わりに使う
+  const histCache = {};
+  function loadRaceCourses(d) {
+    if (isToday) return Promise.resolve(null);
+    if (!histCache[d]) {
+      histCache[d] = fetch(`data/hist/${d.slice(0, 4)}/${d}.json.gz`).then(async (res) => {
+        if (!res.ok) return null;
+        const buf = await res.arrayBuffer();
+        const u = new Uint8Array(buf);
+        const text = u[0] === 0x1f && u[1] === 0x8b
+          ? await new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'))).text()
+          : new TextDecoder().decode(u);
+        const map = {};
+        JSON.parse(text).venues.forEach((v) => v.races.forEach((r) => {
+          map[`${v.jcd}-${r.r}`] = Object.fromEntries(r.e.filter((e) => Number.isInteger(e[2])).map((e) => [e[0], e[2]]));
+        }));
+        return map;
+      }).catch(() => null);
+    }
+    return histCache[d];
+  }
+  // 進入コース：展示の並びがあればそれ、なければ本番の進入（過去の日）、どちらもなければ枠番
+  const inC = (b) => b.exCourse || b.raceCourse || b.lane;
+  const inSrc = (r) => (r.boats.some((b) => b.exCourse) ? '展示' : r.boats.some((b) => b.raceCourse) ? '本番' : '');
   const order = () => { try { return localStorage.getItem('gachiiku_order') || 'course'; } catch (e) { return 'course'; } };
   document.addEventListener('click', (e) => {
     const b = e.target.closest('[data-order]');
@@ -266,7 +293,7 @@ window.WAKE_READY.then((first) => {
     };
     // 入りそうなコース＝その枠から実際に一番多く入ったコース（記録がなければ枠なり）
     const likelyCourse = (b, s) => {
-      if (b.exCourse) return b.exCourse; // 展示の進入が出ていればそれを使う
+      if (b.exCourse || b.raceCourse) return inC(b); // 展示（過去の日は本番）の進入が分かればそれを使う
       const c = s && s.lane && s.lane[b.lane - 1] ? s.lane[b.lane - 1].course.slice(0, 6) : null;
       if (!c || !c.some((n) => n)) return b.lane;
       return c.indexOf(Math.max(...c)) + 1;
@@ -291,8 +318,9 @@ window.WAKE_READY.then((first) => {
 
     // コース別（この艇が枠なりで入ったとき）
     // 展示で進入が変わったら、その艇は展示のコースのデータで出す（前づけ・押し出された艇）
-    const cOf = (x) => x.b.exCourse || x.b.lane;
-    const exMoved = boats.some((x) => x.b.exCourse && x.b.exCourse !== x.b.lane);
+    const cOf = (x) => inC(x.b);
+    const exMoved = boats.some((x) => inC(x.b) !== x.b.lane);
+    const src = inSrc(r);  // '展示' か '本番'
     const cs = (x, key) => { const s = x.s; const c = s && s[key] ? s[key][cOf(x) - 1] : null; return c && c.n ? c : null; };
     const loc = (x) => { const s = x.s; const a = s && s.local5y ? s.local5y[String(v.id)] : null; const c = a ? a[cOf(x) - 1] : null; return c && c.n ? c : null; };
     const kim = (c) => (c ? `${c.sashi}/${c.makuri}/${c.msashi}` : '—');
@@ -350,11 +378,11 @@ window.WAKE_READY.then((first) => {
     }).join('')}</tr>`).join('')
 
     const ordSeg = exMoved ? `<div class="ord-seg"><span>出走表の並び</span><div class="seg seg--sm">
-      <button data-order="course" class="${order() === 'course' ? 'is-on' : ''}">進入順（展示）</button>
+      <button data-order="course" class="${order() === 'course' ? 'is-on' : ''}">進入順（${src}）</button>
       <button data-order="lane" class="${order() === 'lane' ? 'is-on' : ''}">枠番順</button></div>
-      <small>前づけがあったので、展示の進入コース順に並べられます。コース別データは展示のコースの数字です。</small></div>` : '';
+      <small>前づけがあったので、${src === '本番' ? '本番で実際に入った' : '展示の'}進入コース順に並べられます。コース別データは${src}のコースの数字です。</small></div>` : '';
     const table = ordSeg + `<div class="rc-scroll"><table class="rc-tbl">
-      <thead><tr><th>${exMoved ? (order() === 'course' ? '進入' : '枠') : '枠'}</th>${boats.map(({ b }) => `<th>${exMoved ? `<small class="th-c ${b.exCourse !== b.lane ? 'is-moved' : ''}">${b.exCourse}コース</small>` : ''}<span class="ln ln-${b.lane}">${b.lane}</span></th>`).join('')}</tr></thead>
+      <thead><tr><th>${exMoved ? (order() === 'course' ? '進入' : '枠') : '枠'}</th>${boats.map(({ b }) => `<th>${exMoved ? `<small class="th-c ${inC(b) !== b.lane ? 'is-moved' : ''}">${inC(b)}コース</small>` : ''}<span class="ln ln-${b.lane}">${b.lane}</span></th>`).join('')}</tr></thead>
       <tbody>
         ${row('選手', ({ b, p, s }) => `<a class="rc-name" href="#r/${b.no}"><b>${b.name}</b><small>${b.no}${p ? `・${p.grad}期` : ''}</small></a>${markHtml(b, s)}`, 'rc-who')}
         ${row('級別<br><small>年齢・支部</small>', ({ b, p }) => `<span class="cls cls-${b.cls}">${b.cls}</span><small>${b.age}歳・${b.branch}</small>`)}
@@ -377,16 +405,16 @@ window.WAKE_READY.then((first) => {
         ${row('ボート<br><small>No / 2連率</small>', ({ b }) => `<small>#${b.boatNo}</small>${f1(b.boat2)}`)}
         ${row('展示<br><small>タイム / チルト</small>', ({ b }) => (b.exTime ? `${num(b.exTime, f2, bestEx)}<small class="${b.tilt >= 3 && v.id !== 3 ? 'is-tilt3' : ''}">${b.tilt != null ? (b.tilt > 0 ? '+' : '') + b.tilt : ''}</small>` : '—'))}
         ${boats.some(({ b }) => b.exCourse) ? row('展示進入<br><small>コース / ST</small>', ({ b }) => (b.exCourse ? `<b class="${b.exCourse !== b.lane ? 'is-moved' : ''}">${b.exCourse}<small>コース</small></b><small>${b.exSt == null ? '' : b.exSt < 0 ? 'F' + st2(-b.exSt) : st2(b.exSt)}</small>` : '—')) : ''}
-        ${sec('勝ち筋・負け筋', `${bigRace ? 'SG・G1のレースだけ・' : ''}直近1年・${exMoved ? '展示の進入コースで表示' : '枠なり進入のとき'}`)}
+        ${sec('勝ち筋・負け筋', `${bigRace ? 'SG・G1のレースだけ・' : ''}直近1年・${exMoved ? `${src}の進入コースで表示` : '枠なり進入のとき'}`)}
         ${kimRows}
         ${window.GTAG && GTAG.has(boats.map(({ b }) => b.no)) ? sec('攻め方指標', '映像タグから集計・直近1年') + GTAG.DEFS.map(([k, name, cond, def, short]) =>
           row(`${short[0]}${GTAG.tip(def())}<br><small>${short[1]}</small>`, ({ b }) => GTAG.cell(b.no, k))).join('') : ''}
         ${sec('スタートデータ')}
         ${row('平均ST<br><small>全国</small>', ({ b }) => num(b.st, st2, bestSt))}
         ${row('今節平均ST', (x) => num(serSt[x.i], st2, best(serSt, true)))}
-        ${sec('コース別データ', `直近1年・${exMoved ? '展示の進入コースで表示' : '枠なり進入のとき'}`)}
+        ${sec('コース別データ', `直近1年・${exMoved ? `${src}の進入コースで表示` : '枠なり進入のとき'}`)}
         ${block(c1, true)}
-        ${sec(`当地コース別データ`, `${v.name}・直近5年${exMoved ? '・展示の進入コースで表示' : ''}`)}
+        ${sec(`当地コース別データ`, `${v.name}・直近5年${exMoved ? `・${src}の進入コースで表示` : ''}`)}
         ${block(lc, false)}
         ${sec('一般戦コース別データ', 'SG・G1以外・直近1年')}
         ${block(gen, false)}

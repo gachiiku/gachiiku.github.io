@@ -2,6 +2,7 @@
 """映像タグの「まだ判定していないレース」を、新しい日から順に出す（AI判定用）。
 
 使い方: python3 scripts/tag_queue.py [件数=12]
+        python3 scripts/tag_queue.py --kado [件数=25]   … 一番新しい日のレースで、3カド(k)だけまだ判定していないものを出す（ask は ["k"]）
 出力: JSON の配列。1件ごとに
   key       "YYYYMMDD-場-R"（保存するときのキー）
   url       公式のレース映像プレーヤー（新しいタブで開いて見る）
@@ -40,6 +41,31 @@ def ok(e):
     return isinstance(e[3], (int, float)) and str(e[4])[:1] not in 'FLK'
 
 
+def kado_main(limit=25):
+    """一番新しい日の全レースのうち、3カド(k)をまだ判定していない・見送っていないものを出す"""
+    tags, kskip = {}, set()
+    for f in glob.glob(str(ROOT / 'data' / 'tags' / '*.json')):
+        d = json.loads(Path(f).read_text(encoding='utf-8'))
+        tags.update(d.get('tags', {}))
+        kskip |= set(d.get('kskip', {}))
+    f = sorted(glob.glob(str(ROOT / 'data' / 'hist' / '*' / '*.json.gz')))[-1]
+    d = Path(f).name[:8]
+    out = []
+    for v in json.load(gzip.open(f))['venues']:
+        for r in v['races']:
+            key = f"{d}-{v['jcd']}-{r['r']}"
+            if 'k' in tags.get(key, {}) or key in kskip:
+                continue
+            by = {e[2]: e for e in r['e'] if isinstance(e[2], int)}
+            if len(by) < 6:
+                continue
+            out.append({'key': key, 'venue': f"{V[v['jcd']]} {r['r']}R", 'date': d,
+                        'url': f"https://front.player.boatrace-cdn.jp/player/vod?service=boatcast&stadium={v['jcd']:02d}{SLUG[v['jcd']]}"
+                               f"&raceType=race&raceDate={d}&raceNumber={r['r']:02d}&autoplay=0&bitrate=high",
+                        'courses': [by[c][1] for c in range(1, 7)], 'st': [by[c][3] for c in range(1, 7)], 'ask': ['k']})
+    print(json.dumps({'date': d, 'left': len(out), 'races': out[:limit]}, ensure_ascii=False, indent=1))
+
+
 def main(limit=12):
     done = done_keys()
     out = []
@@ -73,4 +99,8 @@ def main(limit=12):
 
 
 if __name__ == '__main__':
-    main(int(sys.argv[1]) if len(sys.argv) > 1 else 12)
+    args = [a for a in sys.argv[1:] if a != '--kado']
+    if '--kado' in sys.argv:
+        kado_main(int(args[0]) if args else 25)
+    else:
+        main(int(args[0]) if args else 12)

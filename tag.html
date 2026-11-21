@@ -161,7 +161,7 @@
       let out = { tags: {}, sha: null };
       if (tok()) {
         const res = await fetch(api(path) + `?ref=main&t=${Date.now()}`, { headers: { Authorization: `Bearer ${tok()}`, Accept: 'application/vnd.github+json' } });
-        if (res.ok) { const j = await res.json(); out = { tags: JSON.parse(b64dec(j.content)).tags || {}, sha: j.sha }; }
+        if (res.ok) { const j = await res.json(); const raw = JSON.parse(b64dec(j.content)); out = { tags: raw.tags || {}, sha: j.sha, raw }; }
         else if (res.status !== 404) throw new Error(`GitHubから読めませんでした（${res.status}）`);
       } else {
         const r = await fetch(`${path}?t=${Date.now()}`);
@@ -267,7 +267,7 @@
               tags[k] = { ...x, at, ...(by ? { by } : {}) };
             });
             const sorted = Object.fromEntries(Object.keys(tags).sort().map((k) => [k, tags[k]]));
-            const body = JSON.stringify({ updatedAt: at, tags: sorted }, null, 0).replace(/,"(\d{8}-)/g, ',\n"$1') + '\n';
+            const body = JSON.stringify({ ...(latest.raw || {}), updatedAt: at, tags: sorted }, null, 0).replace(/,"(\d{8}-)/g, ',\n"$1') + '\n';
             const n = Object.keys(draft).filter((k) => k.startsWith(m)).length;
             const res = await fetch(api(`data/tags/${m}.json`), {
               method: 'PUT',

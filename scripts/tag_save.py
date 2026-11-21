@@ -4,7 +4,8 @@
 使い方: python3 scripts/tag_save.py 判定.json
 判定.json の形:
   {"tags": {"20261120-24-3": {"g": "握"|"差"|"他", "k": 0|1, "z": 0|1}},   # 確信が持てた項目だけ入れる
-   "skip": {"20261120-1-10": "ナイターで暗く見分けられない"}}              # 判定できなかったレース（次から出さない）
+   "skip": {"20261120-1-10": "ナイターで暗く見分けられない"},             # 判定できなかったレース（次から出さない）
+   "kskip": {"20261121-2-5": "スタート前が映らない"}}                     # 3カドだけ見送り（--kado の一覧から外す）
 保存先: data/tags/YYYYMM.json（タグ）と data/tags/skip.json（見送り）。そのあと git に記録して push する
 （push されると公開作業が動き、数分でサイトの指標に反映される）。
 """
@@ -42,8 +43,19 @@ def main(src):
     for m, add in months.items():
         p = TAGS / f'{m}.json'
         d = json.loads(p.read_text(encoding='utf-8')) if p.exists() else {'tags': {}}
-        tags = {**d.get('tags', {}), **add}
-        dump(p, {'updatedAt': at, 'tags': dict(sorted(tags.items()))})
+        tags = d.get('tags', {})
+        for k, t in add.items():  # すでにある判定（握りなど）は消さずに足す
+            tags[k] = {**tags.get(k, {}), **t}
+        out = {'updatedAt': at, 'tags': dict(sorted(tags.items()))}
+        if d.get('kskip'):
+            out['kskip'] = d['kskip']
+        dump(p, out)
+    for key, why in (new.get('kskip') or {}).items():
+        p = TAGS / f'{key[:6]}.json'
+        d = json.loads(p.read_text(encoding='utf-8')) if p.exists() else {'tags': {}}
+        d['kskip'] = {**d.get('kskip', {}), key: why}
+        d['updatedAt'] = at
+        dump(p, d)
     if new.get('skip'):
         p = TAGS / 'skip.json'
         d = json.loads(p.read_text(encoding='utf-8')) if p.exists() else {'skip': {}}

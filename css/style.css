@@ -1034,3 +1034,27 @@ a.en__who:hover b { color: var(--navy); text-decoration: underline; }
   .cmt__list li { grid-template-columns: 26px minmax(0, 1fr); gap: 4px 8px; }
   .cmt__txt { grid-column: 2; font-size: 13px; }
 }
+
+/* 攻め方指標（映像タグ） */
+.tip { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; margin-left: 4px; border-radius: 50%; border: 1px solid var(--line-2); font-size: 10px; font-weight: 700; color: var(--tx-3); vertical-align: 1px; cursor: help; }
+.tip-pop { position: fixed; z-index: 200; width: min(280px, calc(100vw - 24px)); padding: 9px 11px; border-radius: 4px; background: var(--navy); color: #fff; font-size: 12px; line-height: 1.65; box-shadow: 0 4px 14px rgba(0,0,0,.2); }
+.tgx__row { display: grid; grid-template-columns: 190px 88px minmax(0, 1fr) 110px; gap: 4px 14px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.tgx__name b { font-size: 14px; }
+.tgx__name small { display: block; font-size: 11px; color: var(--tx-3); }
+.tgx__val b { font-family: var(--num); font-size: 22px; color: var(--navy); }
+.tgx__few { display: inline-block; margin-left: 4px; font-size: 10px; color: var(--red); border: 1px solid var(--red); border-radius: 3px; padding: 0 4px; vertical-align: 3px; }
+.tgx__none { font-size: 12px; color: var(--tx-3); }
+.tgx__bar { position: relative; height: 10px; border-radius: 5px; background: var(--line); }
+.tgx__bar i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 5px; background: var(--navy); }
+.tgx__bar em { position: absolute; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; background: var(--red); }
+.tgx__n { font-size: 12px; text-align: right; color: var(--tx-2); font-family: var(--num); }
+.tgx__n small { display: block; font-family: inherit; font-size: 10.5px; color: var(--tx-3); }
+.tgx__sub { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 12px; color: var(--tx-2); }
+.tgx__sub b { color: var(--tx); }
+@media (max-width: 600px) {
+  .tgx__row { grid-template-columns: minmax(0, 1fr) auto; }
+  .tgx__bar { grid-column: 1 / -1; order: 3; }
+  .tgx__n { grid-column: 1 / -1; order: 4; text-align: left; }
+  .tgx__n small { display: inline; margin-left: 8px; }
+  .tgx__sub { order: 5; }
+}

@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#12305f">
+  <title>映像タグ入力｜GACHIIKU 管理</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css?v=20261122a">
+  <style>
+    .ad { max-width: 960px; margin: 0 auto; padding: 24px 24px 120px; }
+    .ad h1 { font-size: 22px; font-weight: 900; margin-bottom: 4px; }
+    .ad__lead { font-size: 13px; color: var(--tx-2); margin-bottom: 18px; line-height: 1.7; }
+    .ad-box { border: 1px solid var(--line-2); border-radius: var(--r); padding: 14px 16px; margin-bottom: 16px; }
+    .ad-box h2 { font-size: 14px; font-weight: 900; margin-bottom: 8px; }
+    .ad-box summary { font-size: 14px; font-weight: 900; cursor: pointer; }
+    .ad-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .ad input, .ad select { height: 36px; padding: 0 10px; font: inherit; font-size: 14px; border: 1px solid var(--line-2); border-radius: var(--r); background: var(--bg); color: var(--tx); min-width: 0; }
+    .ad input[type=password] { flex: 1 1 280px; }
+    .btn { height: 36px; padding: 0 16px; border-radius: var(--r); border: 1px solid var(--navy); color: var(--navy); font-weight: 700; font-size: 14px; white-space: nowrap; }
+    .btn--fill { background: var(--navy); color: #fff; }
+    .btn:disabled { opacity: .4; cursor: default; }
+    .ad-msg { font-size: 13px; margin-top: 8px; }
+    .ad-msg.is-ok { color: var(--green); } .ad-msg.is-ng { color: var(--red); }
+    .ad-help { font-size: 12px; color: var(--tx-3); margin-top: 8px; line-height: 1.7; }
+    .ad-help ol, .ad-help ul { padding-left: 18px; }
+    .ad-help b { color: var(--tx-2); }
+    .tg { border: 1px solid var(--line-2); border-radius: var(--r); padding: 12px 14px; margin-bottom: 12px; }
+    .tg.is-dirty { background: var(--gold-2); }
+    .tg.is-done { border-color: var(--navy); }
+    .tg__h { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-bottom: 10px; }
+    .tg__h b { font-family: var(--num); font-size: 22px; color: var(--navy); }
+    .tg__h span { font-size: 12px; color: var(--tx-2); }
+    .tg__h .vbtn { margin-left: auto; }
+    .tg__lead { font-size: 11px; font-weight: 700; color: #fff; background: var(--red); border-radius: 3px; padding: 2px 6px; }
+    .tg__ok { font-size: 11px; font-weight: 700; color: var(--navy); }
+    .tg__boats { list-style: none; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; margin-bottom: 10px; }
+    .tg__boats li { border: 1px solid var(--line); border-radius: 4px; padding: 5px 6px; font-size: 12px; min-width: 0; }
+    .tg__boats .c { font-size: 10px; color: var(--tx-3); display: flex; align-items: center; gap: 4px; }
+    .tg__boats .ln { width: 18px; height: 18px; font-size: 11px; }
+    .tg__boats .nm { display: block; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tg__boats .st { font-family: var(--num); color: var(--tx-2); }
+    .tg__boats .st.is-f { color: var(--red); }
+    .tg__q { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    .tg__q > div { min-width: 0; }
+    .tg__q label { display: block; font-size: 11px; color: var(--tx-3); margin-bottom: 4px; }
+    .tsel { display: flex; border: 1px solid var(--line-2); border-radius: 4px; overflow: hidden; }
+    .tsel button { flex: 1; height: 36px; font-size: 13px; font-weight: 700; border-left: 1px solid var(--line-2); color: var(--tx-2); }
+    .tsel button:first-child { border-left: 0; }
+    .tsel button.is-on { background: var(--navy); color: #fff; }
+    .tg__na { display: flex; align-items: center; height: 36px; font-size: 12px; color: var(--tx-3); }
+    .ad-bar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--bg); border-top: 1px solid var(--line-2); padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); display: flex; gap: 12px; align-items: center; justify-content: flex-end; z-index: 30; }
+    .ad-bar span { margin-right: auto; min-width: 0; font-size: 12px; color: var(--tx-2); }
+    @media (max-width: 720px) {
+      .ad { padding: 16px 12px 120px; }
+      .tg { padding: 10px; }
+      .tg__boats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .tg__q { grid-template-columns: minmax(0, 1fr); }
+      .tg__h .vbtn { margin-left: 0; width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <header class="hdr"><div class="hdr__inner">
+    <a class="logo" href="index.html"><span class="logo__mark">G</span><span class="logo__txt">GACHIIKU<small>管理ページ</small></span></a>
+  </div></header>
+  <main class="ad">
+    <h1>映像タグの入力</h1>
+    <p class="ad__lead">レース映像の<b>スタートから1周目1マークまで（約20秒）</b>を見て、3つの項目をタップします。入力したタグから「2コース握り率」「3カド率」「変わり全速率」を集計し、選手ページとレースページに出します。進入コースとSTが確定した<b>翌日以降のレース</b>が対象です。 <a href="admin.html">モーター評価の入力 ›</a></p>
+
+    <details class="ad-box" id="tokbox">
+      <summary>① 書き込み用の鍵</summary>
+      <div class="ad-row" style="margin-top:8px">
+        <input type="password" id="tok" placeholder="github_pat_ から始まる鍵を貼り付け" autocomplete="off">
+        <button class="btn btn--fill" id="tok-save">確認して保存</button>
+        <button class="btn" id="tok-clear">この端末から消す</button>
+      </div>
+      <p class="ad-msg" id="tok-msg"></p>
+      <p class="ad-help">モーター評価の入力と同じ鍵です。片方で保存していれば、そのまま使えます。作り方はモーター評価の入力ページの①を見てください。</p>
+    </details>
+
+    <details class="ad-box">
+      <summary>判定のしかた</summary>
+      <div class="ad-help">
+        <ul>
+          <li><b>2コース</b>：1マークで、内（1コースの内側）に差したら「差し」、1コースの外を握って回ったら「握り」。スタートで大きく遅れた・転覆などでどちらでもなければ「その他」。</li>
+          <li><b>3カド</b>：進入で、3コースの艇が1・2コースより後ろに下がってダッシュ（助走を長く取る位置）から出たら「あり」。普段どおり1〜3コースが横並びのスローなら「なし」。</li>
+          <li><b>変わり全速</b>：<span class="tg__lead">4先行</span> の付いたレース（4コースのSTが3コースより<span id="lead-v">0.05</span>秒以上早い）だけ。3コースが内に差さず、4コースの外を全速で回ったら「あり」、差しに回った・減速したなら「なし」。</li>
+          <li>迷ったときは押さなくて大丈夫です。押していない項目は集計に入りません。もう一度押すと取り消せます。</li>
+        </ul>
+      </div>
+    </details>
+
+    <section class="ad-box">
+      <h2>② レースを選ぶ</h2>
+      <div class="ad-row">
+        <input type="date" id="date">
+        <select id="venue"></select>
+        <select id="filter">
+          <option value="all">全レース</option>
+          <option value="todo">未入力だけ</option>
+          <option value="lead">4先行のレースだけ（変わり全速の対象）</option>
+        </select>
+        <input type="text" id="by" placeholder="入力者の名前（任意）" maxlength="20" style="width:170px">
+      </div>
+      <p class="ad-msg" id="day-msg"></p>
+    </section>
+
+    <section id="races"></section>
+  </main>
+  <div class="ad-bar"><span id="status">読み込み中…</span><button class="btn btn--fill" id="save" disabled>保存して反映</button></div>
+  <script src="js/video.js?v=20261122a"></script>
+  <script>
+  (() => {
+    const REPO = 'gachiiku/gachiiku.github.io';
+    const LEAD = 0.05; // scripts/build_tags.py と同じ
+    const VENUES = ['', '桐生', '戸田', '江戸川', '平和島', '多摩川', '浜名湖', '蒲郡', '常滑', '津', '三国', 'びわこ', '住之江',
+      '尼崎', '鳴門', '丸亀', '児島', '宮島', '徳山', '下関', '若松', '芦屋', '福岡', '唐津', '大村'];
+    const Q = [
+      ['g', '2コースの1マーク', [['握', '握り'], ['差', '差し'], ['他', 'その他']]],
+      ['k', '3カド（3コースがダッシュ）', [[1, 'あり'], [0, 'なし']]],
+      ['z', '3コースの変わり全速', [[1, 'あり'], [0, 'なし']]],
+    ];
+    const $ = (s) => document.querySelector(s);
+    const esc = (t) => String(t ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const ls = {
+      get: (k) => { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } },
+      set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} },
+      del: (k) => { try { localStorage.removeItem(k); } catch (e) {} },
+    };
+    const tok = () => ls.get('wake_gh_token');
+    const b64enc = (str) => { const b = new TextEncoder().encode(str); let s = ''; b.forEach((x) => { s += String.fromCharCode(x); }); return btoa(s); };
+    const b64dec = (b64) => new TextDecoder().decode(Uint8Array.from(atob(b64.replace(/\n/g, '')), (c) => c.charCodeAt(0)));
+    const api = (path) => `https://api.github.com/repos/${REPO}/contents/${path}`;
+    const ymd = (d) => d.replace(/-/g, '');
+
+    let names = {};        // 登番 → 名前
+    let hist = null;       // その日のレース
+    let saved = {};        // 月ごとの保存済みタグ { "202611": {key: tag} }
+    let draft = {};        // 編集中 { key: tag }
+
+    // ---- その日のレース（進入・ST・着順）を読む。.json.gz をそのまま展開する ----
+    async function loadHist(d) {
+      const res = await fetch(`data/hist/${d.slice(0, 4)}/${d}.json.gz`);
+      if (!res.ok) return null;
+      const buf = await res.arrayBuffer();
+      const u = new Uint8Array(buf);
+      if (u[0] === 0x1f && u[1] === 0x8b) {
+        const s = new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'));
+        return JSON.parse(await new Response(s).text());
+      }
+      return JSON.parse(new TextDecoder().decode(u)); // ブラウザが展開済みのとき
+    }
+    async function loadMonth(m, fresh) {
+      if (saved[m] && !fresh) return saved[m];
+      const path = `data/tags/${m}.json`;
+      let out = { tags: {}, sha: null };
+      if (tok()) {
+        const res = await fetch(api(path) + `?ref=main&t=${Date.now()}`, { headers: { Authorization: `Bearer ${tok()}`, Accept: 'application/vnd.github+json' } });
+        if (res.ok) { const j = await res.json(); out = { tags: JSON.parse(b64dec(j.content)).tags || {}, sha: j.sha }; }
+        else if (res.status !== 404) throw new Error(`GitHubから読めませんでした（${res.status}）`);
+      } else {
+        const r = await fetch(`${path}?t=${Date.now()}`);
+        if (r.ok) out.tags = (await r.json()).tags || {};
+      }
+      saved[m] = out;
+      return out;
+    }
+
+    const byCourse = (race) => { const m = {}; race.e.forEach((e) => { if (Number.isInteger(e[2])) m[e[2]] = e; }); return m; };
+    const isNum = (x) => typeof x === 'number';
+    function leadOf(by) {
+      const a = by[3], b = by[4];
+      if (!a || !b || !isNum(a[3]) || !isNum(b[3])) return null;
+      if (/^[FLK]/.test(String(a[4])) || /^[FLK]/.test(String(b[4]))) return null;
+      return Math.round((a[3] - b[3]) * 100) / 100 >= LEAD ? Math.round((a[3] - b[3]) * 100) / 100 : false;
+    }
+    const keyOf = (d, jcd, r) => `${d}-${jcd}-${r}`;
+    const cur = (key) => draft[key] || ((saved[key.slice(0, 6)] || {}).tags || {})[key] || {};
+    function isDone(key, lead) {
+      const t = cur(key);
+      return t.g != null && t.k != null && (!lead || t.z != null);
+    }
+
+    function render() {
+      const d = ymd($('#date').value), jcd = +$('#venue').value, f = $('#filter').value;
+      const v = hist && hist.venues.find((x) => x.jcd === jcd);
+      if (!v) { $('#races').innerHTML = ''; updateBar(); return; }
+      const posTxt = (p) => (isNum(p) ? `${p}着` : String(p || '').replace(/\d/, '') || '—');
+      const html = v.races.map((race) => {
+        const by = byCourse(race), lead = leadOf(by), key = keyOf(d, jcd, race.r), t = cur(key);
+        if (f === 'lead' && !lead) return '';
+        if (f === 'todo' && isDone(key, lead)) return '';
+        const boats = [1, 2, 3, 4, 5, 6].map((c) => {
+          const e = by[c];
+          if (!e) return `<li><span class="c">${c}コース</span><span class="nm">—</span></li>`;
+          const fl = /^F/.test(String(e[4]));
+          return `<li><span class="c">${c}コース <span class="ln ln-${e[1]}">${e[1]}</span></span>
+            <span class="nm">${esc(names[e[0]] || e[0])}</span>
+            <span class="st ${fl ? 'is-f' : ''}">${isNum(e[3]) ? (fl ? 'F' : '') + e[3].toFixed(2).replace(/^0/, '') : '—'}</span> <small>${posTxt(e[4])}</small></li>`;
+        }).join('');
+        const qs = Q.map(([k, label, opts]) => {
+          if (k === 'z' && !lead) return `<div><label>${label}</label><div class="tg__na">対象外（4コースが先行していない）</div></div>`;
+          return `<div><label>${label}</label><div class="tsel" data-k="${k}">${opts.map(([val, l]) =>
+            `<button data-v="${val}" class="${t[k] != null && String(t[k]) === String(val) ? 'is-on' : ''}">${l}</button>`).join('')}</div></div>`;
+        }).join('');
+        return `<div class="tg ${draft[key] ? 'is-dirty' : ''} ${isDone(key, lead) ? 'is-done' : ''}" data-key="${key}" data-lead="${lead ? 1 : 0}">
+          <div class="tg__h"><b>${race.r}R</b><span>${esc(race.name || '')}</span><span>決まり手 ${esc(race.kim || '—')}</span>
+            ${lead ? `<span class="tg__lead">4先行 ${lead.toFixed(2).replace(/^0/, '')}</span>` : ''}
+            ${isDone(key, lead) ? '<span class="tg__ok">✓ 入力済み</span>' : ''}
+            <button class="vbtn" data-video="${jcd}-${d}-${race.r}">▶ 映像を見る ↗</button></div>
+          <ol class="tg__boats">${boats}</ol>
+          <div class="tg__q">${qs}</div></div>`;
+      }).join('');
+      $('#races').innerHTML = html || '<p class="empty">条件に合うレースはありません。</p>';
+      updateBar();
+    }
+    function updateBar() {
+      const n = Object.keys(draft).length;
+      $('#save').disabled = !n || !tok();
+      $('#status').textContent = !tok() ? '① の鍵を保存すると、タグを保存できます'
+        : n ? `${n}レースの変更があります（まだ保存していません）` : '変更はありません';
+    }
+
+    document.addEventListener('click', (e) => {
+      const b = e.target.closest('.tsel button');
+      if (!b) return;
+      const card = b.closest('.tg'), key = card.dataset.key, k = b.closest('.tsel').dataset.k;
+      const val = k === 'g' ? b.dataset.v : +b.dataset.v;
+      const t = { ...cur(key) };
+      if (t[k] != null && String(t[k]) === String(val)) delete t[k]; else t[k] = val; // もう一度押すと取り消し
+      draft[key] = t;
+      b.closest('.tsel').querySelectorAll('button').forEach((y) => y.classList.toggle('is-on', t[k] != null && y.dataset.v === String(t[k])));
+      card.classList.add('is-dirty');
+      const done = isDone(key, card.dataset.lead === '1');
+      card.classList.toggle('is-done', done);
+      updateBar();
+    });
+
+    $('#save').addEventListener('click', async () => {
+      $('#save').disabled = true;
+      $('#status').textContent = '保存中…';
+      const now = new Date();
+      const at = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      const by = $('#by').value.trim();
+      const months = [...new Set(Object.keys(draft).map((k) => k.slice(0, 6)))];
+      try {
+        for (const m of months) {
+          for (let tries = 0; ; tries++) {
+            const latest = await loadMonth(m, true); // 保存直前に最新を読み直して、自分の変更だけ重ねる
+            const tags = { ...latest.tags };
+            Object.entries(draft).filter(([k]) => k.startsWith(m)).forEach(([k, t]) => {
+              const x = {};
+              ['g', 'k', 'z'].forEach((f) => { if (t[f] != null) x[f] = t[f]; });
+              if (!Object.keys(x).length) { delete tags[k]; return; }
+              tags[k] = { ...x, at, ...(by ? { by } : {}) };
+            });
+            const sorted = Object.fromEntries(Object.keys(tags).sort().map((k) => [k, tags[k]]));
+            const body = JSON.stringify({ updatedAt: at, tags: sorted }, null, 0).replace(/,"(\d{8}-)/g, ',\n"$1') + '\n';
+            const n = Object.keys(draft).filter((k) => k.startsWith(m)).length;
+            const res = await fetch(api(`data/tags/${m}.json`), {
+              method: 'PUT',
+              headers: { Authorization: `Bearer ${tok()}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
+              body: JSON.stringify({ message: `映像タグを更新（${m.slice(0, 4)}/${+m.slice(4)} ${n}レース）`, content: b64enc(body), sha: latest.sha || undefined, branch: 'main' }),
+            });
+            if (res.ok) { saved[m] = { tags: sorted, sha: (await res.json()).content.sha }; break; }
+            if ((res.status === 409 || res.status === 422) && tries < 2) continue; // ほかの人と同時に保存した
+            throw new Error(`保存できませんでした（${res.status}）`);
+          }
+          Object.keys(draft).filter((k) => k.startsWith(m)).forEach((k) => delete draft[k]);
+        }
+        ls.set('gachiiku_tag_by', by);
+        render();
+        $('#status').textContent = `保存しました（${at}）。数分でサイトの指標に反映されます。`;
+      } catch (err) {
+        $('#status').textContent = err.message;
+        $('#save').disabled = false;
+      }
+    });
+
+    async function openDay() {
+      const d = ymd($('#date').value);
+      if (Object.keys(draft).length && !confirm('保存していない変更があります。日付を変えると消えます。よろしいですか？')) return;
+      draft = {};
+      $('#day-msg').textContent = '読み込み中…';
+      hist = await loadHist(d).catch(() => null);
+      await loadMonth(d.slice(0, 6)).catch((e) => { $('#day-msg').textContent = e.message; });
+      if (!hist) {
+        $('#venue').innerHTML = '';
+        $('#day-msg').className = 'ad-msg is-ng';
+        $('#day-msg').textContent = 'この日のレースデータはまだありません（レースの翌朝に入ります）。';
+        render();
+        return;
+      }
+      const keep = +$('#venue').value;
+      $('#venue').innerHTML = hist.venues.map((v) => `<option value="${v.jcd}">${VENUES[v.jcd]}（${v.races.length}R）</option>`).join('');
+      if (hist.venues.some((v) => v.jcd === keep)) $('#venue').value = keep;
+      const tags = saved[d.slice(0, 6)].tags;
+      const n = Object.keys(tags).filter((k) => k.startsWith(d)).length;
+      $('#day-msg').className = 'ad-msg';
+      $('#day-msg').textContent = `${hist.venues.length}場・入力済み ${n}レース`;
+      render();
+    }
+
+    $('#date').addEventListener('change', openDay);
+    $('#venue').addEventListener('change', render);
+    $('#filter').addEventListener('change', render);
+    $('#tok-save').addEventListener('click', async () => {
+      const t = $('#tok').value.trim();
+      if (!t) return;
+      $('#tok-msg').className = 'ad-msg'; $('#tok-msg').textContent = '確認中…';
+      const res = await fetch(`https://api.github.com/repos/${REPO}`, { headers: { Authorization: `Bearer ${t}`, Accept: 'application/vnd.github+json' } });
+      const j = res.ok ? await res.json() : null;
+      if (j && j.permissions && j.permissions.push) {
+        ls.set('wake_gh_token', t);
+        $('#tok').value = '';
+        $('#tok-msg').className = 'ad-msg is-ok'; $('#tok-msg').textContent = '鍵を確認しました。この端末でタグを保存できます。';
+        saved = {};
+        await openDay();
+      } else {
+        $('#tok-msg').className = 'ad-msg is-ng'; $('#tok-msg').textContent = '書き込みできる鍵ではありませんでした。';
+      }
+      updateBar();
+    });
+    $('#tok-clear').addEventListener('click', () => { ls.del('wake_gh_token'); $('#tok-msg').textContent = 'この端末から鍵を消しました。'; updateBar(); });
+    window.addEventListener('beforeunload', (e) => { if (Object.keys(draft).length) { e.preventDefault(); e.returnValue = ''; } });
+
+    (async () => {
+      $('#lead-v').textContent = LEAD.toFixed(2);
+      $('#by').value = ls.get('gachiiku_tag_by');
+      if (tok()) $('#tok-msg').textContent = 'この端末には鍵が保存されています。';
+      else $('#tokbox').open = true;
+      const y = new Date(Date.now() - 86400000);
+      $('#date').value = `${y.getFullYear()}-${String(y.getMonth() + 1).padStart(2, '0')}-${String(y.getDate()).padStart(2, '0')}`;
+      try {
+        const ix = await fetch('data/racers/index.json').then((r) => r.json());
+        const ni = ix.cols.indexOf('no'), nn = ix.cols.indexOf('name');
+        ix.rows.forEach((row) => { names[row[ni]] = row[nn]; });
+      } catch (e) { /* 名前がなくても登番で出す */ }
+      await openDay();
+    })();
+  })();
+  </script>
+</body>
+</html>

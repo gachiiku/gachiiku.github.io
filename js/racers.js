@@ -114,7 +114,7 @@
     $('#rp-title').textContent = '';
     try {
       await loadIndex().catch(() => null);
-      const [res, sres] = await Promise.all([fetch(`data/racers/r/${no}.json`), fetch(`data/racers/s/${no}.json`).catch(() => null)]);
+      const [res, sres] = await Promise.all([fetch(`data/racers/r/${no}.json`), fetch(`data/racers/s/${no}.json`).catch(() => null), window.GTAG ? GTAG.load() : null]);
       if (!res.ok) throw new Error('not found');
       const stats = sres && sres.ok ? await sres.json() : null;
       if (+no !== curNo) rpTab = 'top';
@@ -279,7 +279,7 @@
   }
 
   // ---------- コース別（期間別成績・ST・勝ち方/負け方・前づけ） ----------
-  const ropt = { metric: 'r1', scope: 'all', course: '1' };
+  const ropt = { metric: 'r1', scope: 'all', course: '1', tp: '1y' };
   const seg = (key, items) => `<div class="seg seg--sm">${items.map(([v, l]) =>
     `<button data-ropt="${key}:${v}" class="${ropt[key] === v ? 'is-on' : ''}">${l}</button>`).join('')}</div>`;
   const C6 = [1, 2, 3, 4, 5, 6];
@@ -312,7 +312,7 @@
       </tbody></table></div>
       <p class="rp-def">安定率＝そのコースの平均STから±0.03以内　抜出率＝内側の艇より0.05以上早い　出遅率＝内側の艇（1コースは2コース）より0.05以上遅い</p></div>`;
 
-    return spanNote(s) + `<div class="rp-stack">${kimCard(s)}${loseCard(s)}${courseRaces(s)}${rate}${st}${mae}</div>`;
+    return spanNote(s) + `<div class="rp-stack">${kimCard(s)}${loseCard(s)}${window.GTAG ? GTAG.card(curNo, ropt.tp, seg('tp', GTAG.PERIODS)) : ''}${courseRaces(s)}${rate}${st}${mae}</div>`;
   }
 
   // コースを選ぶと、そのコースで走った直近1年のレースを一覧（結果・映像つき）

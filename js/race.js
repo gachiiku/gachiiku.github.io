@@ -179,7 +179,7 @@ window.WAKE_READY.then((first) => {
     syncUrl();
     renderNav(v, r);
     const my = ++seq;
-    const [data] = await Promise.all([Promise.all(r.boats.map((b) => racer(b.no))), loadMev(), loadMotors(v.id), loadComments()]);
+    const [data] = await Promise.all([Promise.all(r.boats.map((b) => racer(b.no))), loadMev(), loadMotors(v.id), loadComments(), window.GTAG ? GTAG.load() : null]);
     if (my !== seq) return; // 途中で別のレースに切り替わった
     const boats = r.boats.map((b, i) => ({ b, s: data[i][0], p: data[i][1] }));
     $('#rc-body').innerHTML = renderBody(v, r, boats);
@@ -289,6 +289,8 @@ window.WAKE_READY.then((first) => {
         ${row('展示<br><small>タイム / チルト</small>', ({ b }) => (b.exTime ? `${num(b.exTime, f2, bestEx)}<small>${b.tilt ?? ''}</small>` : '—'))}
         ${sec('勝ち筋・負け筋', '直近1年・枠なり進入のとき')}
         ${kimRows}
+        ${window.GTAG && GTAG.has(boats.map(({ b }) => b.no)) ? sec('攻め方指標', '映像タグから集計・直近1年') + GTAG.DEFS.map(([k, name, cond, def, short]) =>
+          row(`${short[0]}${GTAG.tip(def())}<br><small>${short[1]}</small>`, ({ b }) => GTAG.cell(b.no, k))).join('') : ''}
         ${sec('スタートデータ')}
         ${row('平均ST<br><small>全国</small>', ({ b }) => num(b.st, st2, bestSt))}
         ${row('今節平均ST', (x) => num(serSt[x.i], st2, best(serSt, true)))}

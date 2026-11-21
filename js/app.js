@@ -122,10 +122,12 @@ window.WAKE_READY.then((first) => {
       }
       const nr = v.s.nextRace;
       const prog = v.races.map((r) => `<i class="${r.result ? (r.result.canceled ? 'is-cancel' : r.result.payout >= 10000 ? 'is-man' : 'is-done') : r === nr ? 'is-next' : ''}"></i>`).join('');
+      const al = window.GALERT ? GALERT.upcoming(v, date) : [];  // 展示の前づけ・3角（まだ終わっていないレース）
+      const alert = al.length ? `<div class="vc__al ${al.some((x) => x.a.kado) ? 'is-kado' : ''}">${al.slice(0, 3).map((x) => `<span>${x.r.no}R ${x.a.label}</span>`).join('')}</div>` : '';
       const badge = v.s.done.length >= 3
         ? (v.s.avg >= 6000 ? '<span class="tag tag--hot">荒れ</span>' : v.s.avg <= 2500 ? '<span class="tag tag--cool">固い</span>' : '')
         : '';
-      return `<button class="vc vc--${st}" data-venue="${v.id}">
+      return `<button class="vc vc--${st} ${al.length ? GALERT.cls(al[0].a) : ''}" data-venue="${v.id}">
         <div class="vc__top"><span class="vc__no">${pad(v.id)}</span><span class="vc__en"></span>
           ${v.night ? '<span class="tag tag--night">ナイター</span>' : ''}${v.morning ? '<span class="tag">モーニング</span>' : ''}${v.midnight ? '<span class="tag tag--night">ミッドナイト</span>' : ''}<span class="tag tag--g ${v.grade === 'SG' || v.grade === 'G1' ? 'is-big' : ''}">${v.grade}</span></div>
         <div class="vc__name">${v.name}${badge}${v.s.canceled ? `<span class="tag tag--cancel">中止${v.s.canceled}R</span>` : ''}</div>
@@ -133,10 +135,12 @@ window.WAKE_READY.then((first) => {
         <div class="vc__next">${nr
           ? `<span class="vc__r">${nr.no}<small>R</small></span><span class="vc__t">締切 ${hm(nr.deadline)}<b data-deadline="${nr.deadline}"></b></span>`
           : `<span class="vc__fin">${v.s.canceled === v.races.length ? '本日中止' : '本日終了'}</span>`}</div>
-        <div class="prog">${prog}</div>
+        ${alert}<div class="prog">${prog}</div>
       </button>`;
     }).join('') || '<p class="empty">該当する場はありません</p>';
+    if (live && window.GALERT) GALERT.notify(venues, date, (vv, rr) => `race.html?j=${vv.id}&r=${rr.no}`);
   }
+  if (window.GALERT) GALERT.onChange(() => renderVenues());
 
   // ---- 場傾向ランキング
   function renderRanks() {

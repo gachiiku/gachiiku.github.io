@@ -50,17 +50,22 @@ window.WAKE_READY.then((first) => {
   }
 
   // ---------- 上部: 開催場・レース切り替え ----------
+  let lastNav = null;
+  if (window.GALERT) GALERT.onChange(() => { if (lastNav) renderNav(...lastNav); });
   function renderNav(v, r) {
     $('#rc-venues').innerHTML = venues.filter((x) => x.open).map((x) => {
       const n = nextRace(x);
-      return `<a href="?${isToday ? '' : `d=${date}&`}j=${x.id}" class="${x.id === v.id ? 'is-on' : ''}">
-        <b>${x.name}</b><small>${n ? `${n.no}R ${hm(n.deadline)}` : '終了'}</small></a>`;
+      const al = window.GALERT ? GALERT.upcoming(x, date) : [];  // まだ終わっていないレースの展示アラート
+      return `<a href="?${isToday ? '' : `d=${date}&`}j=${x.id}" class="${x.id === v.id ? 'is-on' : ''} ${al.length ? GALERT.cls(al[0].a) : ''}">
+        <b>${x.name}${al.length ? GALERT.badge(al[0].a) : ''}</b><small>${n ? `${n.no}R ${hm(n.deadline)}` : '終了'}</small></a>`;
     }).join('');
     $('#rc-meta').innerHTML = `<span class="tag tag--g ${v.grade === 'SG' || v.grade === 'G1' ? 'is-big' : ''}">${v.grade}</span>${v.night ? '<span class="tag tag--night">ナイター</span>' : ''} ${v.title}・${v.day}`;
     $('#rc-title').innerHTML = `${v.name} <span>${r.no}R</span> <small>${r.name}${r.dist ? `・${r.dist}m` : ''}</small>
       <em class="rc-dl">締切 ${hm(r.deadline)} <i data-deadline="${r.result ? '' : r.deadline}"></i></em>`;
     $('#rc-tabs').innerHTML = v.races.map((x) =>
-      `<a href="?${isToday ? '' : `d=${date}&`}j=${v.id}&r=${x.no}" class="${x.no === r.no ? 'is-on' : ''} ${x.result ? 'is-done' : ''}">${x.no}R<small>${hm(x.deadline)}</small></a>`).join('');
+      `<a href="?${isToday ? '' : `d=${date}&`}j=${v.id}&r=${x.no}" class="${x.no === r.no ? 'is-on' : ''} ${x.result ? 'is-done' : ''} ${window.GALERT ? GALERT.cls(GALERT.info(v, x, date)) : ''}">${x.no}R${window.GALERT ? GALERT.badge(GALERT.info(v, x, date)) : ''}<small>${hm(x.deadline)}</small></a>`).join('');
+    lastNav = [v, r];
+    if (isToday && window.GALERT) GALERT.notify(venues, date, (vv, rr) => `race.html?j=${vv.id}&r=${rr.no}`);
     const on = $('#rc-tabs .is-on');
     if (on) on.scrollIntoView({ block: 'nearest', inline: 'center' });
     document.title = `${v.name} ${r.no}R 出走表｜GACHIIKU`;

@@ -1105,3 +1105,26 @@ a.en__who:hover b { color: var(--navy); text-decoration: underline; }
 
 /* 過去のレースの3角 */
 .result__kado, .cr-kado { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 3px; background: #7c2d12; color: #fff; font-size: 11px; font-weight: 900; vertical-align: 2px; }
+
+/* 展示の特殊アラート（前づけ＝赤、3角＝茶） */
+.al-badge { display: inline-block; margin-left: 4px; padding: 0 4px; border-radius: 3px; background: var(--red); color: #fff; font-size: 10px; font-weight: 900; line-height: 1.5; vertical-align: 1px; }
+.al-badge--kado { background: #7c2d12; }
+#rc-tabs a.is-al-mae, .rc-venues a.is-al-mae { background: #fff0ee; box-shadow: inset 0 0 0 2px var(--red); }
+#rc-tabs a.is-al-kado, .rc-venues a.is-al-kado { background: #fbefe6; box-shadow: inset 0 0 0 2px #7c2d12; }
+#rc-tabs a.is-al.is-on { color: inherit; }
+.vc.is-al-mae { box-shadow: 0 0 0 2px var(--red); }
+.vc.is-al-kado { box-shadow: 0 0 0 2px #7c2d12; }
+.vc__al { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0 2px; }
+.vc__al span { font-size: 11px; font-weight: 900; color: #fff; background: var(--red); border-radius: 3px; padding: 1px 6px; }
+.vc__al.is-kado span { background: #7c2d12; }
+#al-toasts { position: fixed; z-index: 300; top: 64px; left: 50%; transform: translateX(-50%); width: min(420px, calc(100vw - 24px)); display: flex; flex-direction: column; gap: 8px; }
+.al-toast { position: relative; display: block; padding: 10px 34px 10px 14px; border-radius: 6px; background: var(--red); color: #fff; box-shadow: 0 6px 20px rgba(0,0,0,.25); text-decoration: none; animation: al-in .25s ease-out; }
+.al-toast--kado { background: #7c2d12; }
+.al-toast b { display: block; font-size: 14px; }
+.al-toast span { display: block; font-size: 12px; margin-top: 2px; opacity: .95; }
+.al-toast i { position: absolute; right: 10px; top: 8px; font-style: normal; font-size: 18px; cursor: pointer; }
+@keyframes al-in { from { transform: translateY(-8px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-color-scheme: dark) { #rc-tabs a.is-al-mae, .rc-venues a.is-al-mae, #rc-tabs a.is-al-kado, .rc-venues a.is-al-kado { background: transparent; } }
+.rc-venues a.is-on.is-al-mae { background: var(--navy); color: #fff; box-shadow: inset 0 0 0 3px var(--red); }
+.rc-venues a.is-on.is-al-kado { background: var(--navy); color: #fff; box-shadow: inset 0 0 0 3px #c2410c; }
+.rc-venues a.is-on.is-al small { color: rgba(255,255,255,.8); }

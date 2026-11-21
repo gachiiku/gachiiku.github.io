@@ -177,6 +177,18 @@ def parse_beforeinfo(page):
         # [展示タイム, チルト, プロペラ]
         if len(tds) >= 2:
             ex[int(lane.group(1))] = {'exTime': num(tds[0]), 'tilt': num(tds[1])}
+    # スタート展示：上から順に1コース・2コース…と並ぶ。STの「F.03」はフライング（マイナスで持つ）
+    i = page.find('スタート展示')
+    if i >= 0:
+        blk = page[i:i + 8000]
+        rows = re.findall(r'table1_boatImage1Number is-type(\d)">\d</span>.*?table1_boatImage1Time[^>]*>([^<]*)<', blk, re.S)
+        for course, (lane, st) in enumerate(rows[:6], 1):
+            st = st.strip()
+            m = re.search(r'(\d*)\.(\d+)', st)
+            v = float(f'{m.group(1) or 0}.{m.group(2)}') if m else None
+            e = ex.setdefault(int(lane), {})
+            e['exCourse'] = course
+            e['exSt'] = -v if (v is not None and st.startswith('F')) else v
     w = {}
     for key, label in (('temp', '気温'), ('wind', '風速'), ('waterTemp', '水温'), ('wave', '波高')):
         m = re.search(label + r'</span>\s*<span class="weather1_bodyUnitLabelData">([^<]*)<', page)
@@ -302,7 +314,7 @@ def update_live(v, hd, now_min):
     for race in upcoming[:2]:
         ex, w = parse_beforeinfo(get(f'beforeinfo?rno={race["no"]}&jcd={jcd:02d}&hd={hd}'))
         for b in race['boats']:
-            if b['lane'] in ex and ex[b['lane']]['exTime']:
+            if b['lane'] in ex and ex[b['lane']].get('exTime'):
                 b.update(ex[b['lane']])
                 race['exhibited'] = True
         if w.get('temp') is not None:

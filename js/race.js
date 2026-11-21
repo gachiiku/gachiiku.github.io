@@ -203,6 +203,23 @@ window.WAKE_READY.then((first) => {
         <span class="result__p ${r.result.payout >= 10000 ? 'is-man' : ''}">3連単 ${yen(r.result.payout)}</span>
         <button class="vbtn" data-video="${v.id}-${date}-${r.no}">▶ レース映像 ↗</button></div>` : '';
 
+    // スタート展示の進入（枠なりかどうか、前づけ・動いた艇を目立たせる）
+    function exinCard(r) {
+      const bs = r.boats.filter((b) => b.exCourse);
+      if (bs.length < 6) return '';
+      const order = [...bs].sort((a, b) => a.exCourse - b.exCourse);
+      const moved = bs.filter((b) => b.exCourse !== b.lane);
+      const notes = bs.filter((b) => b.exCourse < b.lane).map((b) => `<b>${b.lane}号艇 ${esc(b.name)}</b>が<b>${b.exCourse}コース</b>へ前づけ`);
+      const outs = bs.filter((b) => b.exCourse > b.lane).map((b) => `${b.lane}号艇は${b.exCourse}コース`);
+      return `<div class="exin ${moved.length ? 'is-moved' : ''}">
+        <div class="exin__h"><span class="exin__l">展示進入</span>${moved.length ? '<span class="exin__tag">進入変化あり</span>' : '<span class="exin__ok">枠なり</span>'}</div>
+        <ol class="exin__row">${order.map((b) => `<li class="${b.exCourse !== b.lane ? (b.exCourse < b.lane ? 'is-in' : 'is-out') : ''}">
+          <small>${b.exCourse}コース</small><span class="ln ln-${b.lane}">${b.lane}</span>
+          ${b.exCourse < b.lane ? '<em>前づけ</em>' : b.exCourse > b.lane ? '<em>外へ</em>' : ''}</li>`).join('')}</ol>
+        ${moved.length ? `<p class="exin__note">${notes.concat(outs).join('、')}。本番も同じとは限りません。</p>` : ''}
+        <p class="exin__def">スタート展示での並び（直前情報）。3カド（ダッシュに引く）は公式データに出ないため、ここには出ません。</p></div>`;
+    }
+
     // 動きのマーク：前＝前づけ（枠より内のコースに入る）、握・3角・変全＝映像タグの攻め方指標
     const maeRate = (s) => {
       if (!s || !s.lane) return null;
@@ -212,6 +229,7 @@ window.WAKE_READY.then((first) => {
     };
     // 入りそうなコース＝その枠から実際に一番多く入ったコース（記録がなければ枠なり）
     const likelyCourse = (b, s) => {
+      if (b.exCourse) return b.exCourse; // 展示の進入が出ていればそれを使う
       const c = s && s.lane && s.lane[b.lane - 1] ? s.lane[b.lane - 1].course.slice(0, 6) : null;
       if (!c || !c.some((n) => n)) return b.lane;
       return c.indexOf(Math.max(...c)) + 1;
@@ -219,9 +237,11 @@ window.WAKE_READY.then((first) => {
     const markHtml = (b, s) => {
       const out = [];
       const m = b.lane > 1 ? maeRate(s) : null;
-      if (m && m.r >= 15) out.push(['前', `前づけ：2〜6枠のとき枠より内のコースに入った割合 ${m.r.toFixed(1)}%（${m.n}走）`]);
+      if (b.exCourse && b.exCourse < b.lane) out.push(['展示前', `スタート展示で${b.lane}号艇が${b.exCourse}コースに入った（前づけ）`]);
+      else if (m && m.r >= 15) out.push(['前', `前づけ：2〜6枠のとき枠より内のコースに入った割合 ${m.r.toFixed(1)}%（${m.n}走）`]);
+      if (b.tilt != null && b.tilt >= 3) out.push(['チルト3', `チルト +${b.tilt.toFixed(1)}度（最大。出足を捨てて伸びに振った調整）`]);
       if (window.GTAG) out.push(...GTAG.marks(b.no, likelyCourse(b, s)));
-      return out.length ? `<span class="mk-row">${out.map(([l, t]) => `<span class="mk mk--${l === '前' ? 'mae' : 'tag'}" data-tip="${t}" role="button" tabindex="0">${l}</span>`).join('')}</span>` : '';
+      return out.length ? `<span class="mk-row">${out.map(([l, t]) => `<span class="mk mk--${l === '前' || l === '展示前' ? 'mae' : l === 'チルト3' ? 'tilt' : 'tag'}" data-tip="${t}" role="button" tabindex="0">${l}</span>`).join('')}</span>` : '';
     };
     const col = (fn, cls = '') => boats.map((x) => `<td class="${cls}">${fn(x)}</td>`).join('');
     const sec = (title, note) => `<tr class="rc-sec"><th colspan="7">${title}${note ? `<small>${note}</small>` : ''}</th></tr>`;
@@ -306,7 +326,8 @@ window.WAKE_READY.then((first) => {
         ${MEV_AXES.map(([k, l]) => row(`${l}<br><small>5点満点</small>`, ({ b }) => mevCell(v.id, b.motorNo, k))).join('')}
         ${boats.some(({ b }) => (mev[`${v.id}-${b.motorNo}`] || {}).memo) ? row('メモ', ({ b }) => `<span class="mev-memo">${esc((mev[`${v.id}-${b.motorNo}`] || {}).memo || '')}</span>`, 'is-memo') : ''}
         ${row('ボート<br><small>No / 2連率</small>', ({ b }) => `<small>#${b.boatNo}</small>${f1(b.boat2)}`)}
-        ${row('展示<br><small>タイム / チルト</small>', ({ b }) => (b.exTime ? `${num(b.exTime, f2, bestEx)}<small>${b.tilt ?? ''}</small>` : '—'))}
+        ${row('展示<br><small>タイム / チルト</small>', ({ b }) => (b.exTime ? `${num(b.exTime, f2, bestEx)}<small class="${b.tilt >= 3 ? 'is-tilt3' : ''}">${b.tilt != null ? (b.tilt > 0 ? '+' : '') + b.tilt : ''}</small>` : '—'))}
+        ${boats.some(({ b }) => b.exCourse) ? row('展示進入<br><small>コース / ST</small>', ({ b }) => (b.exCourse ? `<b class="${b.exCourse !== b.lane ? 'is-moved' : ''}">${b.exCourse}<small>コース</small></b><small>${b.exSt == null ? '' : b.exSt < 0 ? 'F' + st2(-b.exSt) : st2(b.exSt)}</small>` : '—')) : ''}
         ${sec('勝ち筋・負け筋', '直近1年・枠なり進入のとき')}
         ${kimRows}
         ${window.GTAG && GTAG.has(boats.map(({ b }) => b.no)) ? sec('攻め方指標', '映像タグから集計・直近1年') + GTAG.DEFS.map(([k, name, cond, def, short]) =>
@@ -329,8 +350,8 @@ window.WAKE_READY.then((first) => {
       </tbody></table></div>`;
 
     const hasStats = boats.some((x) => x.s);
-    return cond + result + table
-      + `<p class="rc-note">赤字はそのレースの6艇で一番良い数字。選手名の下のマーク：<b>前</b>＝前づけ（2〜6枠で枠より内に入る割合15%以上）、<b>握</b>＝2コースに入りそうで2コース握り率50%以上、<b>3角</b>＝3コースに入りそうでダッシュに引く率（3カド率）40%以上、<b>変全</b>＝3コースに入りそうで変わり全速率50%以上（握・3角・変全は映像タグ・直近1年。入りそうなコースはその枠から一番多く入ったコース）。マークを押すと数字が出ます。コース別データは各選手が枠番どおりのコースに入ったときの成績です${hasStats ? `（集計 ${boats.find((x) => x.s).s.histSpan.map((d) => `${d.slice(0, 4)}/${+d.slice(4, 6)}/${+d.slice(6)}`).join('〜')}）` : ''}。</p>`;
+    return exinCard(r) + cond + result + table
+      + `<p class="rc-note">赤字はそのレースの6艇で一番良い数字。選手名の下のマーク：<b>展示前</b>＝スタート展示で前づけした、<b>前</b>＝前づけしやすい（2〜6枠で枠より内に入る割合15%以上）、<b>チルト3</b>＝チルト+3度、<b>握</b>＝2コースに入りそうで2コース握り率50%以上、<b>3角</b>＝3コースに入りそうでダッシュに引く率（3カド率）40%以上、<b>変全</b>＝3コースに入りそうで変わり全速率50%以上（握・3角・変全は映像タグ・直近1年。入りそうなコースはその枠から一番多く入ったコース）。マークを押すと数字が出ます。コース別データは各選手が枠番どおりのコースに入ったときの成績です${hasStats ? `（集計 ${boats.find((x) => x.s).s.histSpan.map((d) => `${d.slice(0, 4)}/${+d.slice(4, 6)}/${+d.slice(6)}`).join('〜')}）` : ''}。</p>`;
   }
 
   // ---------- モーター機歴ページ（#m/番号） ----------

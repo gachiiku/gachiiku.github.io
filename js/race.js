@@ -192,9 +192,22 @@ window.WAKE_READY.then((first) => {
     const [data] = await Promise.all([Promise.all(r.boats.map((b) => racer(b.no))), loadMev(), loadMotors(v.id), loadComments(), loadExKado(), window.GTAG ? GTAG.load() : null]);
     if (my !== seq) return; // 途中で別のレースに切り替わった
     const boats = r.boats.map((b, i) => ({ b, s: data[i][0], p: data[i][1] }));
+    // 展示で進入が変わったら、出走表を進入順（1コース→6コース）に並べ替えられる。既定は進入順、選んだ並びは覚えておく
+    if (r.boats.some((b) => b.exCourse && b.exCourse !== b.lane) && order() === 'course') {
+      boats.sort((a, b) => (a.b.exCourse || a.b.lane) - (b.b.exCourse || b.b.lane));
+    }
     $('#rc-body').innerHTML = renderBody(v, r, boats);
     tick();
   }
+
+  const order = () => { try { return localStorage.getItem('gachiiku_order') || 'course'; } catch (e) { return 'course'; } };
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-order]');
+    if (!b) return;
+    try { localStorage.setItem('gachiiku_order', b.dataset.order); } catch (err) { /* 覚えられなくても切り替える */ }
+    const keep = window.scrollY;
+    render().then(() => window.scrollTo(0, keep));
+  });
 
   function renderBody(v, r, boats) {
     const wx = v.weather || {};
@@ -336,8 +349,12 @@ window.WAKE_READY.then((first) => {
       return `<td class="${lose ? 'k-lose-c' : 'k-gain-c'}">${k && k[0] ? `<small>${c1 ? l1 : l2}</small><b>${f1(k[i + 1])}</b>` : '—'}</td>`;
     }).join('')}</tr>`).join('')
 
-    const table = `<div class="rc-scroll"><table class="rc-tbl">
-      <thead><tr><th>枠</th>${boats.map(({ b }) => `<th><span class="ln ln-${b.lane}">${b.lane}</span></th>`).join('')}</tr></thead>
+    const ordSeg = exMoved ? `<div class="ord-seg"><span>出走表の並び</span><div class="seg seg--sm">
+      <button data-order="course" class="${order() === 'course' ? 'is-on' : ''}">進入順（展示）</button>
+      <button data-order="lane" class="${order() === 'lane' ? 'is-on' : ''}">枠番順</button></div>
+      <small>前づけがあったので、展示の進入コース順に並べられます。コース別データは展示のコースの数字です。</small></div>` : '';
+    const table = ordSeg + `<div class="rc-scroll"><table class="rc-tbl">
+      <thead><tr><th>${exMoved ? (order() === 'course' ? '進入' : '枠') : '枠'}</th>${boats.map(({ b }) => `<th>${exMoved ? `<small class="th-c ${b.exCourse !== b.lane ? 'is-moved' : ''}">${b.exCourse}コース</small>` : ''}<span class="ln ln-${b.lane}">${b.lane}</span></th>`).join('')}</tr></thead>
       <tbody>
         ${row('選手', ({ b, p, s }) => `<a class="rc-name" href="#r/${b.no}"><b>${b.name}</b><small>${b.no}${p ? `・${p.grad}期` : ''}</small></a>${markHtml(b, s)}`, 'rc-who')}
         ${row('級別<br><small>年齢・支部</small>', ({ b, p }) => `<span class="cls cls-${b.cls}">${b.cls}</span><small>${b.age}歳・${b.branch}</small>`)}

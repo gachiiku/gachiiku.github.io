@@ -1128,3 +1128,10 @@ a.en__who:hover b { color: var(--navy); text-decoration: underline; }
 .rc-venues a.is-on.is-al-mae { background: var(--navy); color: #fff; box-shadow: inset 0 0 0 3px var(--red); }
 .rc-venues a.is-on.is-al-kado { background: var(--navy); color: #fff; box-shadow: inset 0 0 0 3px #c2410c; }
 .rc-venues a.is-on.is-al small { color: rgba(255,255,255,.8); }
+
+/* 出走表の並び（進入順・枠番順） */
+.ord-seg { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 4px 0 10px; }
+.ord-seg > span { font-size: 12px; font-weight: 900; }
+.ord-seg small { flex-basis: 100%; font-size: 11px; color: var(--tx-3); }
+.rc-tbl th .th-c { display: block; font-size: 10px; color: var(--tx-3); font-weight: 500; margin-bottom: 2px; }
+.rc-tbl th .th-c.is-moved { color: var(--red); font-weight: 900; }

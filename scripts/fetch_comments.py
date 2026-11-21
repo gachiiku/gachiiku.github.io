@@ -67,7 +67,35 @@ def ashiya():
     return {'source': 'ボートレース芦屋 公式サイト', 'url': url, 'racers': racers}
 
 
-FETCHERS = {21: ashiya, 24: omura}
+def amagasaki():
+    """尼崎: 各レースの出走表に「前日」「当日」コメント（取材できた選手だけ）"""
+    base = 'https://www.boatrace-amagasaki.jp/modules/yosou/group-syussou.php?day={d}&race={r}&if=1'
+    d = datetime.now().strftime('%Y%m%d')
+    racers = {}
+    for r in range(1, 13):
+        req = urllib.request.Request(base.format(d=d, r=r), headers={'User-Agent': UA, 'Referer': 'https://www.boatrace-amagasaki.jp/'})
+        try:
+            page = urllib.request.urlopen(req, timeout=30).read().decode('utf-8', 'replace')
+        except Exception:
+            continue
+        parts = page.split("<table class='comment_area'>")
+        for i in range(1, len(parts)):
+            nos = re.findall(r'(?:toban|racer_no|racerno|no)=(\d{4})', parts[i - 1])
+            if not nos:
+                continue
+            block = parts[i].split('</table>')[0]
+            items = []
+            for tag, txt in re.findall(r"ico_comment_tag comment_tag_(\w+)'.*?<div class='comment_text'>(.*?)</div>", block, re.S):
+                t = clean(txt)
+                if t:
+                    items.append(('前日' if tag == 'zenjitsu' else '当日' if tag == 'toujitsu' else '') + '：' + t)
+            if items:
+                racers[nos[-1]] = {'c': ' ／ '.join(dict.fromkeys(items)), 'm': ''}
+        time.sleep(0.5)
+    return {'source': 'ボートレース尼崎 公式サイト', 'url': 'https://www.boatrace-amagasaki.jp/', 'racers': racers}
+
+
+FETCHERS = {13: amagasaki, 21: ashiya, 24: omura}
 
 
 def main():
@@ -86,11 +114,16 @@ def main():
         except Exception:
             pass
     venues = dict(prev)
+    now = time.time()
     for jcd, fn in FETCHERS.items():
         if jcd not in open_ids:
             continue
+        old = prev.get(str(jcd))
+        if old and now - old.get('fetched', 0) < 600:  # 同じ場を見に行くのは10分に1回まで
+            continue
         try:
             got = fn()
+            got['fetched'] = now
             if got['racers']:
                 venues[str(jcd)] = got
                 print(f'  {got["source"]}: {len(got["racers"])}人')

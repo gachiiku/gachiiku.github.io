@@ -128,6 +128,7 @@ def main():
         vdir = OUT / str(jcd)
         vdir.mkdir(exist_ok=True)
         summary = {}
+        series_of = {}
         for m, rs in motors.items():
             rs.sort(key=lambda x: (x['date'], x['r']))
             a, b = Acc(), Acc()
@@ -152,14 +153,16 @@ def main():
                 s['runs'].append([x['date'], x['r'], x['name'], x['lane'], x['course'], x['st'], x['pos'], x['ex'], x['exRank']])
                 del key
             series = sorted({id(s): s for s in ser.values()}.values(), key=lambda s: s['from'], reverse=True)
-            (vdir / f'{m}.json').write_text(json.dumps({'jcd': jcd, 'motor': m, 'start': starts[str(jcd)], 'last': last_day,
-                                                        'summary': summary[m], 'series': series},
-                                                       ensure_ascii=False, separators=(',', ':')), encoding='utf-8')
+            series_of[m] = series
         # 場の中での順位（取得後の2連対率・直近1ヶ月の2連対率）
         for key in ('all', 'm1'):
             order = sorted((m for m in summary if summary[m][key]['n']), key=lambda m: -(summary[m][key]['r2'] or 0))
             for i, m in enumerate(order, 1):
                 summary[m][key]['rank'] = i
+        for m, series in series_of.items():
+            (vdir / f'{m}.json').write_text(json.dumps({'jcd': jcd, 'motor': m, 'start': starts[str(jcd)], 'last': last_day,
+                                                        'count': len(summary), 'summary': summary[m], 'series': series},
+                                                       ensure_ascii=False, separators=(',', ':')), encoding='utf-8')
         (OUT / f'{jcd}.json').write_text(json.dumps({'jcd': jcd, 'start': starts[str(jcd)], 'last': last_day,
                                                      'count': len(summary), 'motors': summary},
                                                     ensure_ascii=False, separators=(',', ':')), encoding='utf-8')

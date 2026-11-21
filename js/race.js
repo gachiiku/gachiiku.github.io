@@ -199,7 +199,7 @@ window.WAKE_READY.then((first) => {
     const KN = [['逃げ', '逃し'], ['差され', '差し'], ['捲られ', '捲り'], ['捲られ差', '捲り差し']];
     const KS = { 'まくり': '捲り', 'まくり差し': '捲り差し' };
     const kimOf = (x) => (x.s && x.s.kimt ? x.s.kimt.all['1y'][x.b.lane - 1] : null);
-    const kimRows = KN.map(([l1, l2], i) => `<tr><th>${l1} / ${l2}</th>${boats.map((x) => {
+    const kimRows = KN.map(([l1, l2], i) => `<tr><th>${l1}<br><small>${l2}</small></th>${boats.map((x) => {
       const k = kimOf(x);
       const lose = (x.b.lane === 1 && i > 0) || (x.b.lane > 1 && i === 0);
       return `<td class="${lose ? 'k-lose-c' : 'k-gain-c'}">${k && k[0] ? `<small>${x.b.lane === 1 ? l1 : l2}</small><b>${f1(k[i + 1])}</b>` : '—'}</td>`;

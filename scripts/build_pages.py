@@ -130,7 +130,7 @@ def page(r, s, same_branch, css_v):
       <div><dt>優出 / 優勝</dt><dd>{r["finals"]} / {r["champs"]}</dd></div><div><dt>能力指数</dt><dd>{r["ability"] if r["ability"] is not None else "—"}</dd></div>
     </dl>
     <p class="rp-note">{ym(r["from"])}〜{ym(r["to"])}の期別成績（出走{r["starts"]}回）</p>
-    <a class="sp-cta" href="../players.html#r/{no}">決まり手・負け筋・全出走・レース映像をくわしく見る →</a>
+    <a class="sp-cta" href="../players.html#r/{no}">負け筋・全出走・映像をくわしく見る →</a>
 
     <section class="card sp-sec"><h2 class="card__h">{e(plain)}のコース別成績</h2>
       <div class="rp-tbl-wrap"><table class="rp-tbl sp-tbl"><thead><tr><th>コース</th><th>出走</th><th>1着率</th><th>2連対率</th><th>3連対率</th><th>平均ST</th></tr></thead>
@@ -165,7 +165,7 @@ def main():
     by_branch = {}
     for r in sorted(rows, key=lambda x: -(x['ability'] or 0)):
         by_branch.setdefault(r['branch'], []).append(r)
-    css_v = datetime.now().strftime('%Y%m%d')
+    css_v = datetime.now().strftime('%Y%m%d%H')
     (out / 'r').mkdir(parents=True, exist_ok=True)
     n = 0
     for row in rows:

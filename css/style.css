@@ -972,3 +972,21 @@ a.en__who:hover b { color: var(--navy); text-decoration: underline; }
 .about a { color: var(--navy); text-decoration: underline; }
 @media (max-width: 600px) { .about { padding: 0 16px; margin-top: 40px; } }
 .rp-share { margin-left: 6px; color: var(--navy); text-decoration: underline; font-size: 12px; }
+
+/* スマホの崩れ修正 */
+@media (max-width: 600px) {
+  .hdr .logo__txt small { display: none; }       /* ロゴ下の小さな文字（カウントダウンと並ぶと割れる） */
+  .hdr .logo__txt { font-size: 18px; }
+  .card__h { flex-wrap: wrap; row-gap: 6px; }     /* 見出し＋切り替えボタンは2段に */
+  .card__h .seg { order: 3; }
+  .cr-sum { display: flex; flex-wrap: wrap; gap: 2px 12px; }
+  .cr-sum span { white-space: nowrap; }
+  .sp-cta { font-size: 14px; }
+  .rp-meta-link { display: block; }
+}
+@media (max-width: 600px) {
+  .card__h { display: block; line-height: 1.5; }
+  .card__h > small { margin-left: 6px; }
+  .card__h .seg { display: flex; width: 100%; margin: 8px 0 0; }
+  .card__h .tag { margin-right: 6px; vertical-align: 1px; }
+}

@@ -334,7 +334,7 @@
         <td class="cr-o">${order ? order.split('').join('-') : ''}</td>
         <td><button class="vbtn vbtn--sm" data-video="${jcd}-${d}-${r}" aria-label="映像">▶</button></td></tr>`).join('');
     return `<div class="card"><h4 class="card__h">コース別のレース <small>直近1年・結果と映像</small>${tabs}</h4>
-      <p class="cr-sum">${c}コース <b>${rows.length}</b>走　1着率 <b>${rate(1)}</b>%　2連対率 <b>${rate(2)}</b>%　3連対率 <b>${rate(3)}</b>%</p>
+      <p class="cr-sum"><span>${c}コース <b>${rows.length}</b>走</span><span>1着率 <b>${rate(1)}</b>%</span><span>2連対率 <b>${rate(2)}</b>%</span><span>3連対率 <b>${rate(3)}</b>%</span></p>
       ${rows.length ? `<div class="rp-tbl-wrap cr-wrap"><table class="rp-tbl mo-tbl cr-tbl"><thead><tr><th>日付</th><th>レース</th><th>枠</th><th>ST</th><th>着</th><th>決まり手</th><th>3連単</th><th>映像</th></tr></thead>
       <tbody>${list}</tbody></table></div>` : '<p class="empty">このコースで走ったレースはありません</p>'}
       <p class="rp-def">決まり手は1着になった艇のもの（<b class="k-gain">青</b>＝自分の勝ち、<b class="k-lose">赤</b>＝負けたときの相手）。</p></div>`;

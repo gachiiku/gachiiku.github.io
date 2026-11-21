@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=20261121a">
+  <link rel="stylesheet" href="css/style.css?v=20261121b">
   <style>
     .ad { max-width: 960px; margin: 0 auto; padding: 24px 24px 120px; }
     .ad h1 { font-size: 22px; font-weight: 900; margin-bottom: 4px; }
@@ -44,6 +44,9 @@
     .mt tr.is-dirty td { background: var(--gold-2); }
     .ad-bar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--bg); border-top: 1px solid var(--line-2); padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); display: flex; gap: 12px; align-items: center; justify-content: flex-end; z-index: 30; }
     .ad-bar span { font-size: 13px; color: var(--tx-2); margin-right: auto; }
+    .ad-bar .btn { white-space: nowrap; flex: none; }
+    .ad-bar span { min-width: 0; font-size: 12px; }
+    @media (max-width: 600px) { .ad-bar .btn--fill { padding: 0 12px; font-size: 13px; } }
     @media (max-width: 920px) {
       .ad { padding: 16px 12px 120px; }
       .mt thead { display: none; }
@@ -104,7 +107,7 @@
     </section>
   </main>
 
-  <div class="ad-bar"><span id="status">読み込み中…</span><button class="btn btn--fill" id="save" disabled>保存してサイトに反映</button></div>
+  <div class="ad-bar"><span id="status">読み込み中…</span><button class="btn btn--fill" id="save" disabled>保存して反映</button></div>
 
   <script>
   (() => {

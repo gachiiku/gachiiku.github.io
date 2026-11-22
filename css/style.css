@@ -1174,3 +1174,4 @@ a.en__who:hover b { color: var(--navy); text-decoration: underline; }
   .rp-ser .card__h small { display: block; white-space: nowrap; margin: 2px 0 0; }
 }
 .rp-fin b small i { display: block; font-style: normal; }
+.sec__title .sec__sub { font-size: 12px; font-weight: 500; color: var(--tx-3); margin-left: 8px; white-space: nowrap; }

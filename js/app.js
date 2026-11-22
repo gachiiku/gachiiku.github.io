@@ -105,9 +105,10 @@ window.WAKE_READY.then((first) => {
   // ---- 開催場グリッド
   let venueFilter = 'all';
   function renderVenues() {
-    // 開催中 → 本日終了 → 非開催 の順に並べる
+    // 開催中（次のレースの締切が近い順） → 本日終了 → 非開催 の順に並べる
     const order = { live: 0, done: 1, off: 2 };
-    const list = [...venues].sort((a, b) => order[status(a)] - order[status(b)] || a.id - b.id).filter((v) => {
+    const dl = (v) => (v.s && v.s.nextRace ? v.s.nextRace.deadline : 1e9);
+    const list = [...venues].sort((a, b) => order[status(a)] - order[status(b)] || dl(a) - dl(b) || a.id - b.id).filter((v) => {
       const st = status(v);
       if (venueFilter === 'live') return st === 'live';
       if (venueFilter === 'night') return v.open && v.night;

@@ -244,8 +244,7 @@ window.WAKE_READY.then((first) => {
       <div><span>風</span><b>${wx.wind != null ? `${wx.windRel ? `<em class="wrel wrel--${{ '追い風': 'tail', '向かい風': 'head' }[wx.windRel] || 'side'}">${wx.windRel}</em>` : ''}${wx.wind}m` : '—'}</b></div>
       <div><span>波高</span><b>${wx.wave != null ? wx.wave + 'cm' : '—'}</b></div>
       <div><span>気温 / 水温</span><b>${wx.temp != null ? `${wx.temp}℃ / ${wx.waterTemp}℃` : '—'}</b></div></div>
-      ${wx.windAngle != null ? waterCard(wx, v.name) : ''}
-      ${commentCard(v, r)}`;
+      ${wx.windAngle != null ? waterCard(wx, v.name) : ''}`;
     const result = r.result && r.result.canceled
       ? '<div class="result result--cancel"><span class="result__l">レース中止</span><span class="result__note">舟券は返還されます</span></div>'
       : r.result ? `<div class="result"><span class="result__l">結果${window.GTAG && GTAG.isKado(`${date}-${v.id}-${r.no}`) ? '<span class="result__kado" title="レース映像で、3コースの艇がダッシュに引いたことを確認">3角</span>' : ''}</span>
@@ -391,8 +390,8 @@ window.WAKE_READY.then((first) => {
       <button data-order="course" class="${order() === 'course' ? 'is-on' : ''}">進入順（${src}）</button>
       <button data-order="lane" class="${order() === 'lane' ? 'is-on' : ''}">枠番順</button></div>
       <small>前づけがあったので、${src === '本番' ? '本番で実際に入った' : '展示の'}進入コース順に並べられます。コース別データは${src}のコースの数字です。</small></div>` : '';
-    const table = ordSeg + `<div class="rc-scroll"><table class="rc-tbl">
-      <thead><tr><th>${exMoved ? (order() === 'course' ? '進入' : '枠') : '枠'}</th>${boats.map(({ b }) => `<th>${exMoved ? `<small class="th-c ${inC(b) !== b.lane ? 'is-moved' : ''}">${inC(b)}コース</small>` : ''}<span class="ln ln-${b.lane}">${b.lane}</span></th>`).join('')}</tr></thead>
+    const head = `<thead><tr><th>${exMoved ? (order() === 'course' ? '進入' : '枠') : '枠'}</th>${boats.map(({ b }) => `<th>${exMoved ? `<small class="th-c ${inC(b) !== b.lane ? 'is-moved' : ''}">${inC(b)}コース</small>` : ''}<span class="ln ln-${b.lane}">${b.lane}</span></th>`).join('')}</tr></thead>`;
+    const table = ordSeg + `<div class="rc-scroll"><table class="rc-tbl">${head}
       <tbody>
         ${row('選手', ({ b, p, s }) => `<a class="rc-name" href="#r/${b.no}"><b>${b.name}</b><small>${b.no}${p ? `・${p.grad}期` : ''}</small></a>${markHtml(b, s)}`, 'rc-who')}
         ${row('級別<br><small>年齢・支部</small>', ({ b, p }) => `<span class="cls cls-${b.cls}">${b.cls}</span><small>${b.age}歳・${b.branch}</small>`)}
@@ -401,6 +400,15 @@ window.WAKE_READY.then((first) => {
         ${row('全国<br><small>勝率 / 2連率</small>', ({ b }) => `${num(b.nat, f2, bestNat)}<small>${f1(b.nat2)}%</small>`)}
         ${row('当地<br><small>勝率 / 2連率</small>', ({ b }) => (b.local ? `${num(b.local, f2, bestLoc)}<small>${f1(b.local2)}%</small>` : '—'))}
         ${row('モーター<br><small>No / 2連率</small>', ({ b }) => `<small>#${b.motorNo}</small>${num(b.motor2, f1, bestMot)}`)}
+        ${row('ボート<br><small>No / 2連率</small>', ({ b }) => `<small>#${b.boatNo}</small>${f1(b.boat2)}`)}
+        ${row('展示<br><small>タイム / チルト</small>', ({ b }) => (b.exTime ? `${num(b.exTime, f2, bestEx)}<small class="${b.tilt >= 3 && v.id !== 3 ? 'is-tilt3' : ''}">${b.tilt != null ? (b.tilt > 0 ? '+' : '') + b.tilt : ''}</small>` : '—'))}
+        ${boats.some(({ b }) => b.exCourse) ? row('展示進入<br><small>コース / ST</small>', ({ b }) => (b.exCourse ? `<b class="${b.exCourse !== b.lane ? 'is-moved' : ''}">${b.exCourse}<small>コース</small></b><small>${b.exSt == null ? '' : b.exSt < 0 ? 'F' + st2(-b.exSt) : st2(b.exSt)}</small>` : '—')) : ''}
+      </tbody></table></div>`;
+    const data2 = `<div class="rc-scroll"><table class="rc-tbl">${head}
+      <tbody>
+        ${sec('スタートデータ')}
+        ${row('平均ST<br><small>全国</small>', ({ b }) => num(b.st, st2, bestSt))}
+        ${row('今節平均ST', (x) => num(serSt[x.i], st2, best(serSt, true)))}
         ${sec('モーター機歴', motorSum[v.id] && motorSum[v.id].start ? `${+motorSum[v.id].start.slice(4, 6)}/${+motorSum[v.id].start.slice(6)}の使用開始から` : '使用開始から')}
         ${row('ランク<br><small>2連率順</small>', ({ b }) => { const s = mstat(v.id, b.motorNo); return s && s.all.n ? `<b>${s.all.rank}</b><small>/ ${motorSum[v.id].count}機</small>` : '—'; })}
         ${row('2連率<br><small>出走数</small>', ({ b }) => { const s = mstat(v.id, b.motorNo); return s && s.all.n ? `${num(s.all.r2, f1, best(boats.map((x) => (mstat(v.id, x.b.motorNo) || { all: {} }).all.r2)))}<small>${s.all.n}走</small>` : '—'; })}
@@ -412,18 +420,15 @@ window.WAKE_READY.then((first) => {
         ${row('総合', ({ b }) => mevTotal(v.id, b.motorNo))}
         ${MEV_AXES.map(([k, l]) => row(`${l}<br><small>5点満点</small>`, ({ b }) => mevCell(v.id, b.motorNo, k))).join('')}
         ${boats.some(({ b }) => (mev[`${v.id}-${b.motorNo}`] || {}).memo) ? row('メモ', ({ b }) => `<span class="mev-memo">${esc((mev[`${v.id}-${b.motorNo}`] || {}).memo || '')}</span>`, 'is-memo') : ''}
-        ${row('ボート<br><small>No / 2連率</small>', ({ b }) => `<small>#${b.boatNo}</small>${f1(b.boat2)}`)}
-        ${row('展示<br><small>タイム / チルト</small>', ({ b }) => (b.exTime ? `${num(b.exTime, f2, bestEx)}<small class="${b.tilt >= 3 && v.id !== 3 ? 'is-tilt3' : ''}">${b.tilt != null ? (b.tilt > 0 ? '+' : '') + b.tilt : ''}</small>` : '—'))}
-        ${boats.some(({ b }) => b.exCourse) ? row('展示進入<br><small>コース / ST</small>', ({ b }) => (b.exCourse ? `<b class="${b.exCourse !== b.lane ? 'is-moved' : ''}">${b.exCourse}<small>コース</small></b><small>${b.exSt == null ? '' : b.exSt < 0 ? 'F' + st2(-b.exSt) : st2(b.exSt)}</small>` : '—')) : ''}
+        ${sec('今節成績', 'レース・艇番・着順(進入)・ST')}
+        ${dayRows.join('')}
+        ${isToday ? row('早見', ({ b }) => v.races.filter((x) => x.no !== r.no && !x.result && x.boats.some((y) => y.no === b.no)).map((x) => `<a href="?j=${v.id}&r=${x.no}">${x.no}R</a>`).join(' ') || '—', 'rc-hayami') : ''}
+        ${sec('コース別データ', `直近1年・${exMoved ? `${src}の進入コースで表示` : '枠なり進入のとき'}`)}
+        ${block(c1, true)}
         ${sec('勝ち筋・負け筋', `${bigRace ? 'SG・G1のレースだけ・' : ''}直近1年・${exMoved ? `${src}の進入コースで表示` : '枠なり進入のとき'}・％の下は回数／出走数（10走未満は少）`)}
         ${kimRows}
         ${window.GTAG && GTAG.has(boats.map(({ b }) => b.no)) ? sec('攻め方指標', '映像タグから集計・直近1年') + GTAG.DEFS.map(([k, name, cond, def, short]) =>
           row(`${short[0]}${GTAG.tip(def())}<br><small>${short[1]}</small>`, ({ b }) => GTAG.cell(b.no, k))).join('') : ''}
-        ${sec('スタートデータ')}
-        ${row('平均ST<br><small>全国</small>', ({ b }) => num(b.st, st2, bestSt))}
-        ${row('今節平均ST', (x) => num(serSt[x.i], st2, best(serSt, true)))}
-        ${sec('コース別データ', `直近1年・${exMoved ? `${src}の進入コースで表示` : '枠なり進入のとき'}`)}
-        ${block(c1, true)}
         ${sec(`当地コース別データ`, `${v.name}・直近5年${exMoved ? `・${src}の進入コースで表示` : ''}`)}
         ${block(lc, false)}
         ${sec('一般戦コース別データ', 'SG・G1以外・直近1年')}
@@ -431,13 +436,10 @@ window.WAKE_READY.then((first) => {
         ${sec('イン逃げ時のコース別データ', '1コースが逃げたレースで・直近1年')}
         ${row('2着内率', (x) => (inesc[x.i] && inesc[x.i].n ? num(inesc[x.i].r2, f1, best(inesc.map((a) => a && a.n ? a.r2 : null))) : '—'))}
         ${row('3着内率', (x) => (inesc[x.i] && inesc[x.i].n ? num(inesc[x.i].r3, f1, best(inesc.map((a) => a && a.n ? a.r3 : null))) : '—'))}
-        ${sec('今節成績', 'レース・艇番・着順(進入)・ST')}
-        ${dayRows.join('')}
-        ${isToday ? row('早見', ({ b }) => v.races.filter((x) => x.no !== r.no && !x.result && x.boats.some((y) => y.no === b.no)).map((x) => `<a href="?j=${v.id}&r=${x.no}">${x.no}R</a>`).join(' ') || '—', 'rc-hayami') : ''}
       </tbody></table></div>`;
 
     const hasStats = boats.some((x) => x.s);
-    return exinCard(r) + cond + result + table
+    return table + result + exinCard(r) + cond + data2 + commentCard(v, r)
       + `<p class="rc-note">赤字はそのレースの6艇で一番良い数字。選手名の下のマーク：<b>展示前</b>＝スタート展示で前づけした、<b>展示3角</b>＝スタート展示で3コースからダッシュに引いた、<b>3角歴</b>＝3コースに入りそうで、過去に本番で3角をしたことがある（展示がスローでも本番で引くことがある）、<b>前</b>＝前づけしやすい（2〜6枠で枠より内に入る割合15%以上）、<b>チルト3</b>＝チルト+3度、<b>握</b>＝2コースに入りそうで2コース握り率50%以上、<b>3角</b>＝3コースに入りそうでダッシュに引く率（3カド率）40%以上、<b>変全</b>＝3コースに入りそうで変わり全速率50%以上（握・3角・変全は映像タグ・直近1年。入りそうなコースはその枠から一番多く入ったコース）。マークを押すと数字が出ます。<b>チルト3</b>は江戸川では出しません（チルトを上げるのが普通のため）。コース別データ・勝ち筋・負け筋は、枠番どおりのコース（スタート展示で進入が変わったら展示のコース）の成績です。SG・G1開催では勝ち筋・負け筋をSG・G1のレースだけで数えます${hasStats ? `（集計 ${boats.find((x) => x.s).s.histSpan.map((d) => `${d.slice(0, 4)}/${+d.slice(4, 6)}/${+d.slice(6)}`).join('〜')}）` : ''}。</p>`;
   }
 

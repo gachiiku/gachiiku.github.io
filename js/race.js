@@ -264,12 +264,14 @@ window.WAKE_READY.then((first) => {
       const ek = ekOf();
       const kado = !!r.exKado; // 3角（3コースの艇がダッシュに引いた）。映像で確かめたときだけ入る
       const k3 = order[2];
-      const notes = bs.filter((b) => b.exCourse < b.lane).map((b) => `<b>${b.lane}号艇 ${esc(b.name)}</b>が<b>${b.exCourse}コース</b>へ前づけ`);
+      const mv = window.GALERT ? GALERT.moves(r.boats) : {}; // mae＝前づけ、out＝自分から外へ、shift＝ずれただけ（進入変化）
+      const notes = bs.filter((b) => mv[b.lane] === 'mae').map((b) => `<b>${b.lane}号艇 ${esc(b.name)}</b>が<b>${b.exCourse}コース</b>へ前づけ`)
+        .concat(bs.filter((b) => mv[b.lane] === 'out').map((b) => `<b>${b.lane}号艇 ${esc(b.name)}</b>が<b>${b.exCourse}コース</b>に出た`));
       if (kado) notes.unshift(`<b>3コースの${k3.lane}号艇 ${esc(k3.name)}</b>が<b>ダッシュに引いて3角</b>（スロー2艇・ダッシュ4艇）`);
-      const outs = bs.filter((b) => b.exCourse > b.lane).map((b) => `${b.lane}号艇は${b.exCourse}コース`);
-      const tile = (b) => `<li class="${b.exCourse !== b.lane ? (b.exCourse < b.lane ? 'is-in' : 'is-out') : ''} ${kado && b.exCourse === 3 ? 'is-kado' : ''}">
+      const outs = bs.filter((b) => mv[b.lane] === 'shift').map((b) => `${b.lane}号艇は${b.exCourse}コース`);
+      const tile = (b) => `<li class="${mv[b.lane] === 'mae' ? 'is-in' : mv[b.lane] ? 'is-out' : ''} ${kado && b.exCourse === 3 ? 'is-kado' : ''}">
           <small>${b.exCourse}コース</small><span class="ln ln-${b.lane}">${b.lane}</span>
-          ${kado && b.exCourse === 3 ? '<em>3角</em>' : b.exCourse < b.lane ? '<em>前づけ</em>' : b.exCourse > b.lane ? '<em>外へ</em>' : ''}</li>`;
+          ${kado && b.exCourse === 3 ? '<em>3角</em>' : mv[b.lane] === 'mae' ? '<em>前づけ</em>' : mv[b.lane] === 'out' ? '<em>外へ</em>' : mv[b.lane] ? '<em>進入変化</em>' : ''}</li>`;
       const row = kado
         ? `<div class="exin__split"><div class="exin__grp" style="flex:2"><span class="exin__gl">スロー</span><ol class="exin__row exin__row--2">${order.slice(0, 2).map(tile).join('')}</ol></div>
            <div class="exin__grp is-dash" style="flex:4"><span class="exin__gl">ダッシュ</span><ol class="exin__row exin__row--4">${order.slice(2).map(tile).join('')}</ol></div></div>`
@@ -301,7 +303,9 @@ window.WAKE_READY.then((first) => {
       const out = [];
       const m = b.lane > 1 ? maeRate(s) : null;
       if (r.exKado && b.exCourse === 3) out.push(['展示3角', `スタート展示で3コースからダッシュに引いた（3角）`]);
-      if (b.exCourse && b.exCourse < b.lane) out.push(['展示前', `スタート展示で${b.lane}号艇が${b.exCourse}コースに入った（前づけ）`]);
+      const mv = window.GALERT ? GALERT.moves(r.boats)[b.lane] : (b.exCourse < b.lane ? 'mae' : '');
+      if (b.exCourse && mv === 'mae') out.push(['展示前', `スタート展示で${b.lane}号艇が${b.exCourse}コースに入った（前づけ）`]);
+      else if (b.exCourse && b.exCourse !== b.lane) out.push(['進入変化', `スタート展示で${b.exCourse}コース（${mv === 'out' ? '自分から外のコースに出た' : '他の艇が動いたため、ずれた'}）。前づけではない`]);
       else if (m && m.r >= 15) out.push(['前', `前づけ：2〜6枠のとき枠より内のコースに入った割合 ${m.r.toFixed(1)}%（${m.n}走）`]);
       if (b.tilt != null && b.tilt >= 3 && v.id !== 3) out.push( // 江戸川はチルトを上げるのが普通なので出さない
         ['チルト3', `チルト +${b.tilt.toFixed(1)}度（最大。出足を捨てて伸びに振った調整）`]);
@@ -389,7 +393,7 @@ window.WAKE_READY.then((first) => {
     const ordSeg = exMoved ? `<div class="ord-seg"><span>出走表の並び</span><div class="seg seg--sm">
       <button data-order="course" class="${order() === 'course' ? 'is-on' : ''}">進入順（${src}）</button>
       <button data-order="lane" class="${order() === 'lane' ? 'is-on' : ''}">枠番順</button></div>
-      <small>前づけがあったので、${src === '本番' ? '本番で実際に入った' : '展示の'}進入コース順に並べられます。コース別データは${src}のコースの数字です。</small></div>` : '';
+      <small>進入が変わったので、${src === '本番' ? '本番で実際に入った' : '展示の'}進入コース順に並べられます。コース別データは${src}のコースの数字です。</small></div>` : '';
     const head = `<thead><tr><th>${exMoved ? (order() === 'course' ? '進入' : '枠') : '枠'}</th>${boats.map(({ b }) => `<th>${exMoved ? `<small class="th-c ${inC(b) !== b.lane ? 'is-moved' : ''}">${inC(b)}コース</small>` : ''}<span class="ln ln-${b.lane}">${b.lane}</span></th>`).join('')}</tr></thead>`;
     const table = ordSeg + `<div class="rc-scroll"><table class="rc-tbl">${head}
       <tbody>
@@ -440,7 +444,7 @@ window.WAKE_READY.then((first) => {
 
     const hasStats = boats.some((x) => x.s);
     return table + result + exinCard(r) + cond + data2 + commentCard(v, r)
-      + `<p class="rc-note">赤字はそのレースの6艇で一番良い数字。選手名の下のマーク：<b>展示前</b>＝スタート展示で前づけした、<b>展示3角</b>＝スタート展示で3コースからダッシュに引いた、<b>3角歴</b>＝3コースに入りそうで、過去に本番で3角をしたことがある（展示がスローでも本番で引くことがある）、<b>前</b>＝前づけしやすい（2〜6枠で枠より内に入る割合15%以上）、<b>チルト3</b>＝チルト+3度、<b>握</b>＝2コースに入りそうで2コース握り率50%以上、<b>3角</b>＝3コースに入りそうでダッシュに引く率（3カド率）40%以上、<b>変全</b>＝3コースに入りそうで変わり全速率50%以上（握・3角・変全は映像タグ・直近1年。入りそうなコースはその枠から一番多く入ったコース）。マークを押すと数字が出ます。<b>チルト3</b>は江戸川では出しません（チルトを上げるのが普通のため）。コース別データ・勝ち筋・負け筋は、枠番どおりのコース（スタート展示で進入が変わったら展示のコース）の成績です。SG・G1開催では勝ち筋・負け筋をSG・G1のレースだけで数えます${hasStats ? `（集計 ${boats.find((x) => x.s).s.histSpan.map((d) => `${d.slice(0, 4)}/${+d.slice(4, 6)}/${+d.slice(6)}`).join('〜')}）` : ''}。</p>`;
+      + `<p class="rc-note">赤字はそのレースの6艇で一番良い数字。選手名の下のマーク：<b>展示前</b>＝スタート展示で前づけした、<b>展示3角</b>＝スタート展示で3コースからダッシュに引いた、<b>進入変化</b>＝スタート展示でコースが変わったが前づけではない（新人が大外に出て、ずれた など）、<b>3角歴</b>＝3コースに入りそうで、過去に本番で3角をしたことがある（展示がスローでも本番で引くことがある）、<b>前</b>＝前づけしやすい（2〜6枠で枠より内に入る割合15%以上）、<b>チルト3</b>＝チルト+3度、<b>握</b>＝2コースに入りそうで2コース握り率50%以上、<b>3角</b>＝3コースに入りそうでダッシュに引く率（3カド率）40%以上、<b>変全</b>＝3コースに入りそうで変わり全速率50%以上（握・3角・変全は映像タグ・直近1年。入りそうなコースはその枠から一番多く入ったコース）。マークを押すと数字が出ます。<b>チルト3</b>は江戸川では出しません（チルトを上げるのが普通のため）。コース別データ・勝ち筋・負け筋は、枠番どおりのコース（スタート展示で進入が変わったら展示のコース）の成績です。SG・G1開催では勝ち筋・負け筋をSG・G1のレースだけで数えます${hasStats ? `（集計 ${boats.find((x) => x.s).s.histSpan.map((d) => `${d.slice(0, 4)}/${+d.slice(4, 6)}/${+d.slice(6)}`).join('〜')}）` : ''}。</p>`;
   }
 
   // ---------- モーター機歴ページ（#m/番号） ----------

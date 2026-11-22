@@ -12,9 +12,35 @@
     .then((d) => { if (d) { const changed = JSON.stringify(d) !== JSON.stringify(exk); exk = d; if (changed) subs.forEach((f) => f()); } })
     .catch(() => {});
 
+  // 進入の動きを見分ける。枠番順に並べたとき、並びを崩した艇（動いた艇）を最少になるよう選ぶ。
+  //   mae   … 自分から内のコースに入った（前づけ）
+  //   out   … 自分から外のコースに出た（新人が6コースに出る など）
+  //   shift … 他の艇が動いたせいで、ずれただけ（進入変化）
+  // 例：4号艇が6コースに出て 5・6号艇が4・5コースにずれた → 4号艇 out、5・6号艇 shift（前づけではない）
+  function moves(boats, key = 'exCourse') {
+    const bs = (boats || []).filter((b) => b[key]).sort((a, b) => a.lane - b.lane);
+    const out = {};
+    if (!bs.some((b) => b[key] !== b.lane)) return out;
+    let best = null;
+    for (let m = 0; m < 1 << bs.length; m++) {
+      const keep = bs.filter((_, i) => m & (1 << i));
+      if (keep.some((b, i) => i && keep[i - 1][key] > b[key])) continue; // 残した艇はコースが枠番順のまま
+      // 残す艇が多いほど良い。同じなら、内へ入った艇を「動いた艇」とみる（隣どうしの入れ替わりは外の艇の前づけ）
+      // ただし6コースへ出た艇（新人などが大外に出る）は、その艇が動いたとみる（5号艇が6コースに出た → 6号艇は前づけではない）
+      const score = keep.length * 100 - keep.reduce((t, b) => t + Math.max(0, b.lane - b[key]) + (b[key] === 6 && b.lane < 6 ? 3 : 0), 0);
+      if (!best || score > best.score) best = { score, keep: new Set(keep) };
+    }
+    bs.forEach((b) => {
+      if (!best.keep.has(b)) out[b.lane] = b[key] < b.lane ? 'mae' : 'out';
+      else if (b[key] !== b.lane) out[b.lane] = 'shift';
+    });
+    return out;
+  }
+
   // そのレースのアラート。なければ null
   function info(v, r, date) {
-    const mae = (r.boats || []).filter((b) => b.exCourse && b.exCourse < b.lane);
+    const mv = moves(r.boats);
+    const mae = (r.boats || []).filter((b) => mv[b.lane] === 'mae');
     const ek = exk.date === date ? exk.races[`${v.id}-${r.no}`] : null;
     const kado = !!(ek && ek.k === 1);
     if (!mae.length && !kado) return null;
@@ -55,7 +81,7 @@
     fresh.slice(0, 3).forEach(({ v, r, a }) => toast(v, r, a, link(v, r)));
   }
 
-  window.GALERT = { load, info, cls, badge, upcoming, notify, onChange: (f) => subs.push(f) };
+  window.GALERT = { moves, load, info, cls, badge, upcoming, notify, onChange: (f) => subs.push(f) };
   load();
   setInterval(load, 60 * 1000);
 })();

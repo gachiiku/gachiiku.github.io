@@ -97,6 +97,7 @@ def page(r, s, same_branch, css_v):
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#12305f">
   <title>{e(title)}</title>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4046510253561094" crossorigin="anonymous"></script>
   <meta name="description" content="{e(desc)}">
   <link rel="canonical" href="{url}">
   <link rel="icon" href="../favicon.svg" type="image/svg+xml">

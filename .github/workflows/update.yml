@@ -55,7 +55,7 @@ jobs:
         run: |
           mkdir -p _site
           python scripts/build_tags.py   # 映像タグ → data/tagstats.json
-          cp -r index.html players.html race.html admin.html tag.html terms.html robots.txt favicon.svg icon-180.png ogp.png css js data _site/
+          cp -r index.html players.html race.html admin.html tag.html terms.html robots.txt favicon.svg icon-180.png ogp.png css js img data _site/
           python scripts/build_pages.py _site   # 選手ごとのページ（r/登番.html）とサイトマップ
           # 映像タグの入力画面で使うので、レース記録は直近400日だけ公開する
           find _site/data/hist -name '*.json.gz' | sort | head -n -400 | xargs -r rm -f

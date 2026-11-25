@@ -1222,11 +1222,11 @@ a.en__who:hover b { color: var(--navy); text-decoration: underline; }
 .rc-body + .ad-slot { margin: 12px 0; }
 #rc-body2:not(:empty) { margin-top: 12px; }
 
-/* ===== 穴予想（ののきゅ） ===== */
-.ai--ana { border-color: #2aa6c4; }
-.ai--ana .ai-say { background: #effafd; border-color: #bfe8f2; }
-.ai--ana .ai-say::before { border-right-color: #bfe8f2; }
-.ai--ana .ai-say b { color: #1a8aa6; }
+/* ===== 穴予想（アナ姫） ===== */
+.ai--ana { border-color: #e86aa0; }
+.ai--ana .ai-say { background: #fff2f8; border-color: #f7c6dc; }
+.ai--ana .ai-say::before { border-right-color: #f7c6dc; }
+.ai--ana .ai-say b { color: #c2407a; }
 .ai-conf.is-ana { background: #fff3cc; color: #9a6b00; }
 .ana-pick { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 12px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--bg-2); }
 .ana-pick > .ln { width: 36px; height: 34px; font-size: 18px; }

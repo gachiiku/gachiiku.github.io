@@ -90,7 +90,7 @@
     </div>`;
   }
 
-  // ---------- 穴予想（ののきゅ） ----------
+  // ---------- 穴予想（アナ姫） ----------
   // 「人気の目安」＝コースと全国勝率だけで見た1着の確率（多くの人が見る数字）。
   // AIの確率（モーター・展示タイム・STも入れたもの）が、人気の目安より1.2倍以上高く、10%以上ある艇を「穴」とみて、その艇の1着から5点。
   // 該当がなければ「見送り」。過去のレースで試した成績は ABT。
@@ -112,14 +112,14 @@
   }
 
   function anaTalk(pr, x) {
-    if (!x) return 'うーん、今回は人気どおりに見えるきゅ。穴は見つからないから、ののきゅは見送りきゅ。';
+    if (!x) return 'あら、今回は人気どおりの顔ぶれですわね。わたくしの眼鏡にかなう穴は見当たりませんの。今回は見送りですわ。';
     const { a, why, fav } = x;
     const best = (k, low) => [...pr.f].sort((p, q) => (low ? p[k] - q[k] : q[k] - p[k]))[0] === a;
     const reason = why.map(([k, l]) => `${l}${(k === 'ex' || k === 'st') ? (best(k, true) ? '6艇で一番' : '良し') : (best(k) ? '6艇で一番' : '良し')}`).slice(0, 2).join('・');
-    const lines = [`みつけたきゅ！ ${a.b.lane}号艇 ${esc(a.b.name)}（${a.c}コース）が穴きゅ。`];
-    if (reason) lines.push(`${reason}と材料がそろっているのに、勝率とコースだけ見るとあまり人気にならなそうきゅ。`);
-    lines.push(`${fav.b.lane}号艇が負けるときは、この艇の1着を狙うきゅ。`);
-    if (!pr.hasEx) lines.push('まだ展示前だから、展示のあとにもう一回見るきゅ。');
+    const lines = [`見つけましたわ！ ${a.b.lane}号艇 ${esc(a.b.name)}（${a.c}コース）が、わたくしの選ぶ穴ですの。`];
+    if (reason) lines.push(`${reason}と材料はそろっていますのに、勝率とコースだけでは見過ごされそうですわ。`);
+    lines.push(`${fav.b.lane}号艇が崩れるなら、この艇の1着をお狙いあそばせ。`);
+    if (!pr.hasEx) lines.push('まだ展示前ですから、展示のあとにもう一度見て差し上げますわ。');
     return lines.join('');
   }
 
@@ -137,9 +137,9 @@
         <div><h5 class="rp-sub">3連単 穴5点 <small>${x.a.b.lane}号艇の1着から</small></h5><ol class="ai-tri">${tri}</ol>${res}</div>
       </div>` : '';
     return `<div class="card ai ai--ana">
-      <h4 class="card__h">穴予想 <small>ののきゅが穴を探す</small><span class="ai-conf ${x ? 'is-ana' : 'is-futsu'}">${x ? '穴あり' : '見送り'}</span></h4>
-      <div class="ai-head"><img class="ai-sam" src="img/nonokyu.svg?v=1" alt="ののきゅ" width="96" height="96">
-        <div class="ai-say"><b>ののきゅ</b><p>${anaTalk(pr, x)}</p></div></div>
+      <h4 class="card__h">穴予想 <small>アナ姫が穴を見つけて差し上げますわ</small><span class="ai-conf ${x ? 'is-ana' : 'is-futsu'}">${x ? '穴あり' : '見送り'}</span></h4>
+      <div class="ai-head"><img class="ai-sam" src="img/anahime.svg?v=1" alt="アナ姫" width="96" height="96">
+        <div class="ai-say"><b>アナ姫</b><p>${anaTalk(pr, x)}</p></div></div>
       ${body}
       <p class="rp-def">「人気の目安」はコース別1着率と全国勝率だけで見た1着の確率、「AIの1着確率」はそこにモーター・展示タイム・平均STを足したものです。AIの確率が人気の目安より${ANA.ratio}倍以上高く、${ANA.minP * 100}%以上ある艇を「穴」とします（オッズは見ていません）。過去${ABT.n}レースで試した成績：穴ありと出たのは${ABT.cover}レース、穴5点の的中 ${ABT.hit}%、平均配当 ${ABT.avg.toLocaleString()}円、5点ずつ買った場合の回収率 ${ABT.roi}%。試したレースが少ないので、数字は大きくぶれます。当たりを約束するものではありません。舟券は20歳になってから、ご自身の判断で。</p>
     </div>`;

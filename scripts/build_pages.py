@@ -14,7 +14,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 RAC = ROOT / 'data' / 'racers'
-BASE = 'https://gachiiku.github.io/'
+BASE = 'https://gachiikuboat.com/'
 VEN = ['', '桐生', '戸田', '江戸川', '平和島', '多摩川', '浜名湖', '蒲郡', '常滑', '津', '三国', 'びわこ', '住之江',
        '尼崎', '鳴門', '丸亀', '児島', '宮島', '徳山', '下関', '若松', '芦屋', '福岡', '唐津', '大村']
 KS = {'まくり': '捲り', 'まくり差し': '捲り差し'}

@@ -80,7 +80,7 @@
     const res = result && result.order ? `<p class="ai-res">結果 ${result.order.join('-')}：${hitKey && top.some((t) => t.k.join('-') === hitKey) ? '<b class="is-hit">3連単的中</b>' : result.order[0] === pr.rank[0].b.lane ? '<b>本命1着</b>（3連単は外れ）' : '外れ'}</p>` : '';
     return `<div class="card ai">
       <h4 class="card__h">AI予想 <small>ガチイク侍がデータで斬る</small><span class="ai-conf ${CONF[1]}">${CONF[0]}</span></h4>
-      <div class="ai-head"><img class="ai-sam" src="img/samurai.svg" alt="ガチイク侍" width="96" height="96">
+      <div class="ai-head"><img class="ai-sam" src="img/samurai.svg?v=2" alt="ガチイク侍" width="96" height="96">
         <div class="ai-say"><b>ガチイク侍</b><p>${tk.text}</p></div></div>
       <div class="ai-grid">
         <div><h5 class="rp-sub">1着の確率</h5><ol class="ai-rank">${bars}</ol></div>

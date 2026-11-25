@@ -1,31 +1,36 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="ガチイク侍">
-  <!-- ガチイク侍（GACHIIKUのマスコット）：波の前立ての兜をかぶった、ちびの侍 -->
-  <ellipse cx="60" cy="112" rx="34" ry="5" fill="#000" opacity=".12"/>
-  <!-- 体（紺の陣羽織） -->
-  <path d="M30 112c0-22 12-34 30-34s30 12 30 34z" fill="#1c2a5a"/>
-  <path d="M60 78l-12 34h24z" fill="#f4f1ea"/>
-  <path d="M60 80l-7 32M60 80l7 32" stroke="#c8322d" stroke-width="3"/>
-  <!-- 櫂（かい）を背負う -->
-  <path d="M93 64l10-40" stroke="#8a5a2b" stroke-width="5" stroke-linecap="round"/>
-  <path d="M100 30c4-10 12-12 12-4s-6 10-10 10z" fill="#c9924f"/>
+  <!-- ガチイク侍（GACHIIKUのマスコット）：三日月の前立ての兜をかぶった、ちびの侍 -->
+  <ellipse cx="60" cy="114" rx="30" ry="4" fill="#000" opacity=".12"/>
+
+  <!-- 体：紺の羽織に白い襟、腰に刀 -->
+  <path d="M34 114c0-18 10-28 26-28s26 10 26 28z" fill="#1c2a5a"/>
+  <path d="M52 87l8 13 8-13" fill="none" stroke="#f4f1ea" stroke-width="5" stroke-linejoin="round"/>
+  <rect x="36" y="102" width="48" height="5" rx="2" fill="#c8322d"/>
+  <path d="M70 104l26-10" stroke="#3a2a1a" stroke-width="4" stroke-linecap="round"/>
+  <path d="M68 105l5-2" stroke="#e8b923" stroke-width="5" stroke-linecap="round"/>
+
   <!-- 顔 -->
-  <circle cx="60" cy="56" r="27" fill="#ffd9b3"/>
-  <!-- はちまき -->
-  <path d="M33 50c18-6 36-6 54 0v8c-18-6-36-6-54 0z" fill="#fff"/>
-  <text x="60" y="56.5" text-anchor="middle" font-size="9" font-weight="900" fill="#c8322d" font-family="sans-serif">ガチ</text>
-  <path d="M86 52l10-4-4 8z" fill="#fff"/>
-  <!-- 兜 -->
-  <path d="M30 48c0-22 14-32 30-32s30 10 30 32c-10-6-20-8-30-8s-20 2-30 8z" fill="#1c2a5a"/>
-  <path d="M26 50c6-5 12-7 14-7l-4 10c-4 0-7-1-10-3zM94 50c-6-5-12-7-14-7l4 10c4 0 7-1 10-3z" fill="#2b3d7a"/>
-  <!-- 前立て（波の形・金） -->
-  <path d="M60 24c-14-2-24-12-26-22 8 8 16 10 22 8-4-4-4-8 0-10 2 6 8 10 14 10 6 0 12-4 14-10 4 2 4 6 0 10 6 2 14 0 22-8-2 10-12 20-26 22z" fill="#e8b923" stroke="#b88a10" stroke-width="1.2"/>
-  <circle cx="60" cy="26" r="4" fill="#c8322d"/>
-  <!-- 目（気合い） -->
-  <path d="M44 60l10 3M76 60l-10 3" stroke="#222" stroke-width="2.6" stroke-linecap="round"/>
-  <circle cx="49" cy="66" r="3.2" fill="#222"/><circle cx="71" cy="66" r="3.2" fill="#222"/>
-  <circle cx="50" cy="65" r="1" fill="#fff"/><circle cx="72" cy="65" r="1" fill="#fff"/>
-  <!-- ほっぺ・口 -->
-  <ellipse cx="42" cy="72" rx="4" ry="2.5" fill="#ff9e8a" opacity=".7"/>
-  <ellipse cx="78" cy="72" rx="4" ry="2.5" fill="#ff9e8a" opacity=".7"/>
-  <path d="M54 75q6 5 12 0" stroke="#7a3b2e" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+  <circle cx="60" cy="60" r="26" fill="#ffd9b3"/>
+
+  <!-- 兜（はち）と、左右のしころ -->
+  <path d="M31 56c0-20 13-31 29-31s29 11 29 31z" fill="#1c2a5a"/>
+  <path d="M31 52h58v7H31z" fill="#2b3d7a"/>
+  <path d="M30 54c-5 3-8 9-8 14l11-4z M90 54c5 3 8 9 8 14l-11-4z" fill="#2b3d7a"/>
+  <path d="M60 26v26M48 29l4 23M72 29l-4 23" stroke="#2b3d7a" stroke-width="1.6"/>
+
+  <!-- 前立て（金の三日月）と、まんなかの赤い玉 -->
+  <path d="M60 34c-12-2-22-12-24-26 6 9 14 14 24 14s18-5 24-14c-2 14-12 24-24 26z" fill="#e8b923" stroke="#b88a10" stroke-width="1.2" stroke-linejoin="round"/>
+  <circle cx="60" cy="36" r="4.5" fill="#c8322d" stroke="#8f1f1b" stroke-width="1"/>
+
+  <!-- まゆ（気合い）と目 -->
+  <path d="M43 64l11 3M77 64l-11 3" stroke="#222" stroke-width="3" stroke-linecap="round"/>
+  <ellipse cx="49" cy="71" rx="3.2" ry="3.8" fill="#222"/>
+  <ellipse cx="71" cy="71" rx="3.2" ry="3.8" fill="#222"/>
+  <circle cx="50.2" cy="69.6" r="1.1" fill="#fff"/>
+  <circle cx="72.2" cy="69.6" r="1.1" fill="#fff"/>
+
+  <!-- ほっぺと口 -->
+  <ellipse cx="41" cy="77" rx="4" ry="2.4" fill="#ff9e8a" opacity=".7"/>
+  <ellipse cx="79" cy="77" rx="4" ry="2.4" fill="#ff9e8a" opacity=".7"/>
+  <path d="M55 79q5 4 10 0" stroke="#7a3b2e" stroke-width="2.2" fill="none" stroke-linecap="round"/>
 </svg>

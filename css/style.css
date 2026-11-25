@@ -1175,3 +1175,42 @@ a.en__who:hover b { color: var(--navy); text-decoration: underline; }
 }
 .rp-fin b small i { display: block; font-style: normal; }
 .sec__title .sec__sub { font-size: 12px; font-weight: 500; color: var(--tx-3); margin-left: 8px; white-space: nowrap; }
+
+/* ===== AI予想（ガチイク侍） ===== */
+.ai { border: 2px solid var(--navy); }
+.ai .card__h { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ai-conf { margin-left: auto; font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 99px; white-space: nowrap; }
+.ai-conf.is-kata { background: #e6f0ff; color: var(--navy); }
+.ai-conf.is-futsu { background: #f1f1f1; color: var(--tx-2); }
+.ai-conf.is-kon { background: #fde8e7; color: var(--red); }
+.ai-head { display: flex; gap: 12px; align-items: flex-start; margin: 4px 0 14px; }
+.ai-sam { flex: 0 0 auto; width: 96px; height: 96px; }
+.ai-say { position: relative; flex: 1; background: var(--bg-2); border: 1px solid var(--line-2); border-radius: 12px; padding: 10px 14px; }
+.ai-say::before { content: ""; position: absolute; left: -8px; top: 26px; border: 8px solid transparent; border-left: 0; border-right-color: var(--line-2); }
+.ai-say b { font-size: 12px; color: var(--navy); }
+.ai-say p { margin: 4px 0 0; font-size: 14.5px; line-height: 1.7; }
+.ai-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 18px; }
+.ai-rank, .ai-tri { list-style: none; margin: 0; padding: 0; }
+.ai-rank li { display: grid; grid-template-columns: 18px 26px minmax(0, 11em) 1fr 52px; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid var(--line); }
+.ai-rank .ln { width: 24px; height: 22px; font-size: 13px; }
+.ai-mk { font-weight: 900; color: var(--red); text-align: center; }
+.ai-nm { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ai-nm small { margin-left: 6px; color: var(--tx-3); font-size: 11px; }
+.ai-bar { height: 10px; background: var(--bg-2); border-radius: 5px; overflow: hidden; }
+.ai-bar i { display: block; height: 100%; background: var(--navy); border-radius: 5px; }
+.ai-rank b { text-align: right; font-family: var(--num); font-size: 15px; }
+.ai-tri li { display: flex; align-items: center; gap: 4px; padding: 6px 0; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.ai-tri li > small { width: 16px; color: var(--tx-3); }
+.ai-tri .ln { width: 26px; height: 24px; font-size: 14px; }
+.ai-tri i { font-style: normal; color: var(--tx-3); }
+.ai-tri b { margin-left: auto; font-family: var(--num); }
+.ai-tri li.is-hit { background: #fff6d6; }
+.ai-tri em { font-style: normal; font-size: 11px; font-weight: 700; color: #fff; background: var(--red); border-radius: 4px; padding: 1px 6px; margin-left: 6px; }
+.ai-res { margin: 8px 0 0; font-size: 13px; }
+.ai-res .is-hit { color: var(--red); }
+@media (max-width: 600px) {
+  .ai-grid { grid-template-columns: 1fr; }
+  .ai-sam { width: 72px; height: 72px; }
+  .ai-say p { font-size: 13.5px; }
+  .ai-rank li { grid-template-columns: 16px 24px minmax(0, 9.5em) 1fr 46px; gap: 6px; }
+}

@@ -357,5 +357,15 @@ def all_done(path=OUT):
     return bool(races) and all(r.get('result') for r in races)
 
 
+def need_fetch(path):
+    """明日の出走表を取り直す必要があるか（ファイルがない・開催場がない・出走表が空の場がある）"""
+    try:
+        d = json.loads(Path(path).read_text(encoding='utf-8'))
+    except Exception:
+        return True
+    open_v = [v for v in d.get('venues', []) if v.get('open')]
+    return not open_v or any(not v.get('races') for v in open_v)
+
+
 if __name__ == '__main__':
     main()

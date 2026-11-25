@@ -1242,3 +1242,5 @@ a.en__who:hover b { color: var(--navy); text-decoration: underline; }
 .mgrade--D { background: #b9bec6; }
 .rc-tbl .mgrade + small { margin-top: 2px; }
 .mnum[data-tip] { cursor: pointer; }
+.rc-auto { display: block; margin-top: 6px; padding: 6px 10px; border-radius: 6px; background: #fff6d6; color: var(--tx-1, #222); font-size: 12.5px; }
+.rc-auto a { margin-left: 6px; font-weight: 700; }

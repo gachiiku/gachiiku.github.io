@@ -12,7 +12,7 @@ window.WAKE_READY.then((first) => {
   const st2 = (n) => (n == null ? '—' : n.toFixed(2).replace(/^0/, ''));
   const yen = (n) => n.toLocaleString('ja-JP') + '円';
   const q = new URLSearchParams(location.search);
-  const isToday = !q.get('d');
+  const isToday = !q.get('d') && !first.view.auto; // 全レース終了後に明日へ切り替えたときは「今日」扱いにしない
   let jcd = +q.get('j') || 0;
   let rno = +q.get('r') || 0;
 
@@ -59,7 +59,7 @@ window.WAKE_READY.then((first) => {
       return `<a href="?${isToday ? '' : `d=${date}&`}j=${x.id}" class="${x.id === v.id ? 'is-on' : ''} ${al.length ? GALERT.cls(al[0].a) : ''}">
         <b>${x.name}${al.length ? GALERT.badge(al[0].a) : ''}</b><small>${n ? `${n.no}R ${hm(n.deadline)}` : '終了'}</small></a>`;
     }).join('');
-    $('#rc-meta').innerHTML = `<span class="tag tag--g ${v.grade === 'SG' || v.grade === 'G1' ? 'is-big' : ''}">${v.grade}</span>${v.night ? '<span class="tag tag--night">ナイター</span>' : ''} ${v.title}・${v.day}`;
+    $('#rc-meta').innerHTML = `<span class="tag tag--g ${v.grade === 'SG' || v.grade === 'G1' ? 'is-big' : ''}">${v.grade}</span>${v.night ? '<span class="tag tag--night">ナイター</span>' : ''} ${v.title}・${v.day}${first.view.auto ? `<span class="rc-auto">${+date.slice(4, 6)}/${+date.slice(6)}（明日）の出走表・本日の全レースが終わりました <a href="race.html?today=1&j=${v.id}">今日の結果を見る</a></span>` : ''}`;
     $('#rc-title').innerHTML = `${v.name} <span>${r.no}R</span> <small>${r.name}${r.dist ? `・${r.dist}m` : ''}</small>
       <em class="rc-dl">締切 ${hm(r.deadline)} <i data-deadline="${r.result ? '' : r.deadline}"></i></em>`;
     $('#rc-tabs').innerHTML = v.races.map((x) =>

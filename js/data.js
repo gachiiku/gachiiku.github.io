@@ -49,11 +49,14 @@
     const races = d.venues.filter((v) => v.open).flatMap((v) => v.races);
     const allDone = races.length > 0 && races.every((r) => r.result);
     const next = view.days.find((x) => x > d.date);
-    const home = !!document.getElementById('venue-grid');  // 明日への自動切り替えはホームだけ
-    if (home && !params.has('today') && allDone && next) {
-      const n = await load(next);
-      view.auto = true;
-      return Object.assign(n, { view });
+    // 全場のレースが終わったら、トップもレースページも明日の出走表に切り替える（?today=1 で今日のまま）
+    if (!params.has('today') && allDone && next) {
+      const n = await load(next).catch(() => null);
+      // 明日の出走表がまだ出ていない（開催場がない）ときは、今日のまま
+      if (n && n.venues.some((v) => v.open && v.races.length)) {
+        view.auto = true;
+        return Object.assign(n, { view });
+      }
     }
     view.live = true;
     return Object.assign(d, { view });

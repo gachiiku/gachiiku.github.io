@@ -22,9 +22,9 @@ while [ "$(date +%s)" -lt "$END" ]; do
       python -u scripts/fetch_history.py || echo 'fetch_history 失敗（次の回に再挑戦）'
       NEW_HIST=1
     fi
-    # 全場のレースが終わったら、明日の出走表を取っておく（1日1回）
+    # 全場のレースが終わったら、明日の出走表を取っておく（取れるまで。空のファイルや、出走表がまだの場があれば取り直す）
     TMR=$(date -d tomorrow +%Y%m%d)
-    if [ ! -f "data/archive/$TMR.json" ] && python -c 'import sys; sys.path.insert(0, "scripts"); import fetch_today as f; sys.exit(0 if f.all_done() else 1)'; then
+    if python -c 'import sys; sys.path.insert(0, "scripts"); import fetch_today as f; sys.exit(0 if f.all_done() and f.need_fetch("data/archive/'"$TMR"'.json") else 1)'; then
       python -u scripts/fetch_today.py "$TMR" || echo '明日の出走表の取得に失敗'
     fi
     git add data

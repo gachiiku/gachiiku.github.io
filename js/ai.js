@@ -90,5 +90,60 @@
     </div>`;
   }
 
-  window.GAI = { predict, card };
+  // ---------- 穴予想（ののきゅ） ----------
+  // 「人気の目安」＝コースと全国勝率だけで見た1着の確率（多くの人が見る数字）。
+  // AIの確率（モーター・展示タイム・STも入れたもの）が、人気の目安より1.2倍以上高く、10%以上ある艇を「穴」とみて、その艇の1着から5点。
+  // 該当がなければ「見送り」。過去のレースで試した成績は ABT。
+  const ANA = { minP: 0.10, ratio: 1.2 };
+  const ABT = { n: 513, cover: 205, hit: 14.1, roi: 109, avg: 3859 };
+  function ana(pr) {
+    const z0 = pr.f.map((x) => x.parts.course + x.parts.nat);
+    const e0 = z0.map((v) => Math.exp(v)), t0 = e0.reduce((s, v) => s + v, 0);
+    pr.f.forEach((x, i) => { x.q = e0[i] / t0; });
+    const fav = pr.rank[0];
+    const cand = pr.f.filter((x) => x !== fav && x.p >= ANA.minP && x.p / x.q >= ANA.ratio);
+    if (!cand.length) return null;
+    const a = cand.reduce((m, x) => (x.p / x.q > m.p / m.q ? x : m));
+    const tri = pr.tri.filter((t) => t.k[0] === a.b.lane).slice(0, 5);
+    // 穴の理由：人気の目安に入っていない材料（モーター・展示タイム・ST）のうち、一番効いているもの
+    const why = [['mot', 'モーター'], ['ex', '展示タイム'], ['st', 'スタート']].filter(([k]) => a.parts[k] > 0.05)
+      .sort((x, y) => a.parts[y[0]] - a.parts[x[0]]);
+    return { a, tri, why, fav };
+  }
+
+  function anaTalk(pr, x) {
+    if (!x) return 'うーん、今回は人気どおりに見えるきゅ。穴は見つからないから、ののきゅは見送りきゅ。';
+    const { a, why, fav } = x;
+    const best = (k, low) => [...pr.f].sort((p, q) => (low ? p[k] - q[k] : q[k] - p[k]))[0] === a;
+    const reason = why.map(([k, l]) => `${l}${(k === 'ex' || k === 'st') ? (best(k, true) ? '6艇で一番' : '良し') : (best(k) ? '6艇で一番' : '良し')}`).slice(0, 2).join('・');
+    const lines = [`みつけたきゅ！ ${a.b.lane}号艇 ${esc(a.b.name)}（${a.c}コース）が穴きゅ。`];
+    if (reason) lines.push(`${reason}と材料がそろっているのに、勝率とコースだけ見るとあまり人気にならなそうきゅ。`);
+    lines.push(`${fav.b.lane}号艇が負けるときは、この艇の1着を狙うきゅ。`);
+    if (!pr.hasEx) lines.push('まだ展示前だから、展示のあとにもう一回見るきゅ。');
+    return lines.join('');
+  }
+
+  function anaCard(boats, courseOf, result) {
+    if (boats.length < 6) return '';
+    const pr = predict(boats, courseOf);
+    const x = ana(pr);
+    const hitKey = result && result.order ? result.order.join('-') : null;
+    const tri = x ? x.tri.map((t, i) => `<li class="${hitKey === t.k.join('-') ? 'is-hit' : ''}"><small>${i + 1}</small>${t.k.map((l) => `<span class="ln ln-${l}">${l}</span>`).join('<i>-</i>')}<b>${(t.p * 100).toFixed(1)}%</b>${hitKey === t.k.join('-') ? '<em>的中</em>' : ''}</li>`).join('') : '';
+    const res = x && hitKey ? `<p class="ai-res">結果 ${hitKey}：${x.tri.some((t) => t.k.join('-') === hitKey) ? '<b class="is-hit">穴的中！</b>' : result.order[0] === x.a.b.lane ? '<b>穴の艇が1着</b>（3連単は外れ）' : '外れ'}</p>` : '';
+    const body = x ? `<div class="ai-grid">
+        <div><h5 class="rp-sub">穴の艇</h5><div class="ana-pick"><span class="ln ln-${x.a.b.lane}">${x.a.b.lane}</span>
+          <div><b>${esc(x.a.b.name)}</b><small>${x.a.c}コース</small></div>
+          <dl><div><dt>AIの1着確率</dt><dd>${(x.a.p * 100).toFixed(1)}%</dd></div><div><dt>人気の目安</dt><dd>${(x.a.q * 100).toFixed(1)}%</dd></div><div><dt>差</dt><dd class="is-up">${(x.a.p / x.a.q).toFixed(1)}倍</dd></div></dl></div></div>
+        <div><h5 class="rp-sub">3連単 穴5点 <small>${x.a.b.lane}号艇の1着から</small></h5><ol class="ai-tri">${tri}</ol>${res}</div>
+      </div>` : '';
+    return `<div class="card ai ai--ana">
+      <h4 class="card__h">穴予想 <small>ののきゅが穴を探す</small><span class="ai-conf ${x ? 'is-ana' : 'is-futsu'}">${x ? '穴あり' : '見送り'}</span></h4>
+      <div class="ai-head"><img class="ai-sam" src="img/nonokyu.svg?v=1" alt="ののきゅ" width="96" height="96">
+        <div class="ai-say"><b>ののきゅ</b><p>${anaTalk(pr, x)}</p></div></div>
+      ${body}
+      <p class="rp-def">「人気の目安」はコース別1着率と全国勝率だけで見た1着の確率、「AIの1着確率」はそこにモーター・展示タイム・平均STを足したものです。AIの確率が人気の目安より${ANA.ratio}倍以上高く、${ANA.minP * 100}%以上ある艇を「穴」とします（オッズは見ていません）。過去${ABT.n}レースで試した成績：穴ありと出たのは${ABT.cover}レース、穴5点の的中 ${ABT.hit}%、平均配当 ${ABT.avg.toLocaleString()}円、5点ずつ買った場合の回収率 ${ABT.roi}%。試したレースが少ないので、数字は大きくぶれます。当たりを約束するものではありません。舟券は20歳になってから、ご自身の判断で。</p>
+    </div>`;
+  }
+
+  window.GAI = { predict, card, anaCard };
 })();

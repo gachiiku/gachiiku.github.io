@@ -1221,3 +1221,19 @@ a.en__who:hover b { color: var(--navy); text-decoration: underline; }
 .ads-on .ad-slot::before { content: "広告"; display: block; font-size: 10.5px; color: var(--tx-3); text-align: left; margin-bottom: 4px; }
 .rc-body + .ad-slot { margin: 12px 0; }
 #rc-body2:not(:empty) { margin-top: 12px; }
+
+/* ===== 穴予想（ののきゅ） ===== */
+.ai--ana { border-color: #2aa6c4; }
+.ai--ana .ai-say { background: #effafd; border-color: #bfe8f2; }
+.ai--ana .ai-say::before { border-right-color: #bfe8f2; }
+.ai--ana .ai-say b { color: #1a8aa6; }
+.ai-conf.is-ana { background: #fff3cc; color: #9a6b00; }
+.ana-pick { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 12px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--bg-2); }
+.ana-pick > .ln { width: 36px; height: 34px; font-size: 18px; }
+.ana-pick b { font-size: 16px; }
+.ana-pick small { display: block; color: var(--tx-3); font-size: 11.5px; }
+.ana-pick dl { display: flex; gap: 14px; margin: 0 0 0 auto; }
+.ana-pick dt { font-size: 10.5px; color: var(--tx-3); white-space: nowrap; }
+.ana-pick dd { margin: 0; font-family: var(--num); font-size: 17px; font-weight: 600; }
+.ana-pick dd.is-up { color: var(--red); }
+@media (max-width: 600px) { .ana-pick dl { margin: 4px 0 0; width: 100%; justify-content: space-between; } }

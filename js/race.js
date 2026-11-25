@@ -117,6 +117,28 @@ window.WAKE_READY.then((first) => {
   const loadMotors = (j) => (motorSum[j] ? Promise.resolve() : getJSON(`data/motors/${j}.json`).then((d) => { motorSum[j] = d || { motors: {} }; }));
   const mstat = (j, m) => ((motorSum[j] || {}).motors || {})[m] || null;
 
+  // ---------- 船足AI評価（scripts/motor_ai.py。今のモーターの全出走から 出足・行き足・伸び足 1〜5、総合 S〜D） ----------
+  const AI_AXES = [['de', '出足', 'ターン出口の押し・立ち上がり'], ['iki', '行き足', 'スリット後〜1マークの加速（展示タイムの順位から）'], ['nobi', '伸び足', '直線の伸び（直まくり・伸び負けから）']];
+  const aiOf = (j, m) => { const s = mstat(j, m); return s && s.ai ? s.ai : null; };
+  function aiWhy(a, k) {
+    const f = a.f;
+    if (k === 'nobi') return `直まくりの1着 ${f.mak}回（スリット互角かそれより遅れて、まくりで1着。3コースのツケマイも含む）／STで先行してのまくり1着 ${f.makLead}回（スタートの差の可能性があるので弱めに数える）／伸び負け ${f.lost}回（STで並ぶか先行していたのに、外からまくられて4着以下）／まくり差しの1着 ${f.msashi}回（伸び足の根拠にはしない）。${f.n}走から`;
+    if (k === 'de') return `ターン出口で前に出た1着（1コースの逃げ・差し・まくり差し）${f.turn}回／1コースで差された・まくり差された ${f.turnLost}回。${f.n}走から`;
+    return f.exn ? `展示タイムの6艇の中の順位 平均${(f.exs / f.exn).toFixed(2)}位（${f.exn}走）。STの数字は使っていません` : '展示タイムのデータがないため 3（普通）';
+  }
+  function aiCell(j, m, k) {
+    const a = aiOf(j, m);
+    if (!a) return '<small>データなし</small>';
+    const n = a[k];
+    return `<span class="mnum mnum--${n}" data-tip="${esc(aiWhy(a, k))}" role="button" tabindex="0"><b>${n}</b><i style="--w:${n * 20}%"></i></span>`;
+  }
+  function aiTotal(j, m) {
+    const a = aiOf(j, m);
+    if (!a) return '<small>データなし</small>';
+    const tip = `総合 ${a.g}：伸び足を一番重く（45%）、出足30%・行き足25%で見た評価。信頼度 ${a.conf}（今のモーターの${a.f.n}走から。15走未満は評価を2〜4に収めています）`;
+    return `<span class="mgrade mgrade--${a.g}" data-tip="${esc(tip)}" role="button" tabindex="0">${a.g}</span><small>信頼度${a.conf}</small>`;
+  }
+
   // ---------- 展示の3角（スタート展示の映像を見て判定したもの。data/exkado.json） ----------
   let exk = { races: {} };
   const loadExKado = () => fetch('data/exkado.json', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null))
@@ -423,9 +445,9 @@ window.WAKE_READY.then((first) => {
         ${row('貢献P', ({ b }) => { const s = mstat(v.id, b.motorNo); return s && s.all.kp != null ? `<b class="${s.all.kp > 0 ? 'is-plus' : 'is-minus'}">${s.all.kp > 0 ? '+' : ''}${s.all.kp.toFixed(2)}</b>` : '—'; })}
         ${row('展示順位<br><small>平均</small>', ({ b }) => { const s = mstat(v.id, b.motorNo); return s && s.all.exRank ? f2(s.all.exRank) : '—'; })}
         ${row('履歴', ({ b }) => `<a class="mbtn" href="#m/${b.motorNo}"><b>#${b.motorNo}</b><span>履歴 ›</span></a>`)}
-        ${sec('モーター評価', 'GACHIIKU独自の評価')}
-        ${row('総合', ({ b }) => mevTotal(v.id, b.motorNo))}
-        ${MEV_AXES.map(([k, l]) => row(`${l}<br><small>5点満点</small>`, ({ b }) => mevCell(v.id, b.motorNo, k))).join('')}
+        ${sec('モーター評価', 'AIの船足評価・今のモーターの全出走から・数字を押すと根拠')}
+        ${row('総合<br><small>S〜D</small>', ({ b }) => aiTotal(v.id, b.motorNo))}
+        ${AI_AXES.map(([k, l, d]) => row(`${l}<br><small>${k === 'nobi' ? '最重要・' : ''}1〜5</small>`, ({ b }) => aiCell(v.id, b.motorNo, k))).join('')}
         ${boats.some(({ b }) => (mev[`${v.id}-${b.motorNo}`] || {}).memo) ? row('メモ', ({ b }) => `<span class="mev-memo">${esc((mev[`${v.id}-${b.motorNo}`] || {}).memo || '')}</span>`, 'is-memo') : ''}
         ${sec('今節成績', 'レース・艇番・着順(進入)・ST')}
         ${dayRows.join('')}

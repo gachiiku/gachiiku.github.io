@@ -16,6 +16,8 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 from pathlib import Path
 
+from motor_ai import context, evaluate
+
 ROOT = Path(__file__).resolve().parent.parent
 HIST = ROOT / 'data' / 'hist'
 OUT = ROOT / 'data' / 'motors'
@@ -109,6 +111,7 @@ def main():
                 if not es or len(es[0]) < 8:
                     continue
                 exs = sorted(e[7] for e in es if e[7])
+                by, w1st = context(es)  # 船足AI評価のため：勝った艇のコース・ST、内側の艇のST
                 final = '優勝戦' in race['name'] and '準' not in race['name']
                 for no, lane, course, st, pos, motor, boat, ex in es:
                     if motor is None:
@@ -118,6 +121,8 @@ def main():
                         'r': race['r'], 'name': race['name'], 'no': no, 'lane': lane, 'course': course,
                         'st': st, 'pos': pos, 'ex': ex, 'exRank': exs.index(ex) + 1 if ex else None,
                         'final': final, 'boat': boat,
+                        'kim': race.get('kim'), 'wc': w1st[2] if w1st else None, 'wst': w1st[3] if w1st else None,
+                        'innerSt': by[course - 1][3] if isinstance(course, int) and course > 1 and by.get(course - 1) else None,
                     })
 
     OUT.mkdir(parents=True, exist_ok=True)
@@ -129,6 +134,7 @@ def main():
         vdir.mkdir(exist_ok=True)
         summary = {}
         series_of = {}
+        ai = evaluate(motors)  # 出足・行き足・伸び足 1〜5、総合 S〜D
         for m, rs in motors.items():
             rs.sort(key=lambda x: (x['date'], x['r']))
             a, b = Acc(), Acc()
@@ -136,7 +142,7 @@ def main():
                 a.add(x, win.get(x['no']))
                 if x['date'] >= m1:
                     b.add(x, win.get(x['no']))
-            summary[m] = {'all': a.out(), 'm1': b.out()}
+            summary[m] = {'all': a.out(), 'm1': b.out(), 'ai': ai.get(m)}
             # 機歴: 節ごと → 乗った選手ごと
             ser = {}
             for x in rs:

@@ -1237,3 +1237,8 @@ a.en__who:hover b { color: var(--navy); text-decoration: underline; }
 .ana-pick dd { margin: 0; font-family: var(--num); font-size: 17px; font-weight: 600; }
 .ana-pick dd.is-up { color: var(--red); }
 @media (max-width: 600px) { .ana-pick dl { margin: 4px 0 0; width: 100%; justify-content: space-between; } }
+
+/* ===== 船足AI評価 ===== */
+.mgrade--D { background: #b9bec6; }
+.rc-tbl .mgrade + small { margin-top: 2px; }
+.mnum[data-tip] { cursor: pointer; }

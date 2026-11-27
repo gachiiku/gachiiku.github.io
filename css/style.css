@@ -1250,3 +1250,5 @@ a.en__who:hover b { color: var(--navy); text-decoration: underline; }
 .ana-why dt { color: #c2407a; font-weight: 700; white-space: nowrap; }
 .ana-why dd { margin: 0; }
 .ai--ana .ana-pick + .rp-sub { margin-top: 14px; }
+/* チルト +1〜+3（伸び型の調整）は赤字。江戸川は除く */
+.rc-tbl td b.is-tiltup { color: var(--red); font-weight: 700; }

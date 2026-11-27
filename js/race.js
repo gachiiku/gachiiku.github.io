@@ -430,7 +430,9 @@ window.WAKE_READY.then((first) => {
         ${row('当地<br><small>勝率 / 2連率</small>', ({ b }) => (b.local ? `${num(b.local, f2, bestLoc)}<small>${f1(b.local2)}%</small>` : '—'))}
         ${row('モーター<br><small>No / 2連率</small>', ({ b }) => `<small>#${b.motorNo}</small>${num(b.motor2, f1, bestMot)}`)}
         ${row('ボート<br><small>No / 2連率</small>', ({ b }) => `<small>#${b.boatNo}</small>${f1(b.boat2)}`)}
-        ${row('展示<br><small>タイム / チルト</small>', ({ b }) => (b.exTime ? `${num(b.exTime, f2, bestEx)}<small class="${b.tilt >= 3 && v.id !== 3 ? 'is-tilt3' : ''}">${b.tilt != null ? (b.tilt > 0 ? '+' : '') + b.tilt : ''}</small>` : '—'))}
+        ${row('展示タイム', ({ b }) => (b.exTime ? num(b.exTime, f2, bestEx) : '—'))}
+        ${row(`チルト<br><small>${v.id === 3 ? '江戸川は色分けなし' : '+1以上は赤'}</small>`, ({ b }) => (b.tilt == null ? '—'
+          : `<b class="${b.tilt >= 1 && v.id !== 3 ? 'is-tiltup' : ''}">${b.tilt > 0 ? '+' : ''}${b.tilt.toFixed(1)}</b>`))}
         ${boats.some(({ b }) => b.exCourse) ? row('展示進入<br><small>コース / ST</small>', ({ b }) => (b.exCourse ? `<b class="${b.exCourse !== b.lane ? 'is-moved' : ''}">${b.exCourse}<small>コース</small></b><small>${b.exSt == null ? '' : b.exSt < 0 ? 'F' + st2(-b.exSt) : st2(b.exSt)}</small>` : '—')) : ''}
       </tbody></table></div>`;
     const data2 = `<div class="rc-scroll"><table class="rc-tbl">${head}

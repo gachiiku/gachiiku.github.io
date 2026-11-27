@@ -412,15 +412,16 @@
 
   function racesTab(s) {
     if (!s.series.length) return spanNote(s) + '<p class="empty">直近12ヵ月の出走はありません</p>';
-    return `<p class="rp-span">直近12ヵ月の全出走（上から 艇番・ST・(進入)・着順）</p>` + s.series.map((x) => `
+    return `<p class="rp-span">直近12ヵ月の全出走（上から 艇番・ST・(進入)・着順・3連単）</p>` + s.series.map((x) => `
       <div class="card rp-ser"><h4 class="card__h"><span class="tag tag--g ${x.grade === 'SG' || x.grade === 'G1' ? 'is-big' : ''}">${x.grade}</span>${x.title}
         <small>${VENUES[x.jcd]}・${md(x.from)}〜${md(x.to)}</small></h4>
-        <ol class="rp-runs">${x.runs.map(([d, day, r, lane, c, st, pos, name]) => `<li class="${pos === 1 ? 'is-win' : ''} ${name.includes('優勝戦') && !name.includes('準') ? 'is-final' : ''}" title="${name}">
+        <ol class="rp-runs">${x.runs.map(([d, day, r, lane, c, st, pos, name, , , order]) => `<li class="${pos === 1 ? 'is-win' : ''} ${name.includes('優勝戦') && !name.includes('準') ? 'is-final' : ''}" title="${name}">
           <span class="rp-runs__d">${md(d)} ${r}R</span>
           <span class="ln ln-${lane}">${lane}</span>
           <span class="rp-runs__st">${st == null ? '—' : st < 0 ? 'F' + st2(-st) : st2(st)}</span>
           <span class="rp-runs__c">${c ? `(${c})` : ''}</span>
           ${posBadge(pos)}
+          <span class="rp-runs__o" title="3連単">${order ? String(order).split('').map((l) => (+l === lane ? `<b>${l}</b>` : l)).join('-') : '—'}</span>
           <button class="vbtn vbtn--sm" data-video="${x.jcd}-${d}-${r}" aria-label="映像">▶</button></li>`).join('')}</ol></div>`).join('');
   }
 

@@ -329,15 +329,14 @@
         <td class="cr-v">${VENUES[jcd]} ${r}R${c === 3 && window.GTAG && GTAG.isKado(`${d}-${jcd}-${r}`) ? '<span class="cr-kado">3角</span>' : ''}<small>${grade !== '一般' ? grade + '・' : ''}${name}</small></td>
         <td><span class="ln ln-${lane}">${lane}</span></td>
         <td>${st == null ? '—' : st < 0 ? 'F' + st2(-st) : st2(st)}<small>${strank ? strank + '位' : ''}</small></td>
-        <td>${posBadge(pos)}</td>
+        <td class="cr-o">${order ? `<span class="cr-tri">${String(order).split('').map((l) => `<i class="ln ln-${l} ${+l === lane ? 'is-me' : ''}">${l}</i>`).join('')}</span>` : ''}${typeof pos === 'string' ? `<small class="cr-x">${pos}</small>` : order ? '' : '—'}</td>
         <td class="cr-k">${pos === 1 ? `<span class="k-gain">${kim}</span>` : kim ? `<span class="k-lose">${kim}</span>` : ''}</td>
-        <td class="cr-o">${order ? order.split('').join('-') : ''}</td>
         <td><button class="vbtn vbtn--sm" data-video="${jcd}-${d}-${r}" aria-label="映像">▶</button></td></tr>`).join('');
     return `<div class="card"><h4 class="card__h">コース別のレース <small>直近1年・結果と映像</small>${tabs}</h4>
       <p class="cr-sum"><span>${c}コース <b>${rows.length}</b>走</span><span>1着率 <b>${rate(1)}</b>%</span><span>2連対率 <b>${rate(2)}</b>%</span><span>3連対率 <b>${rate(3)}</b>%</span></p>
-      ${rows.length ? `<div class="rp-tbl-wrap cr-wrap"><table class="rp-tbl mo-tbl cr-tbl"><thead><tr><th>日付</th><th>レース</th><th>枠</th><th>ST</th><th>着</th><th>決まり手</th><th>3連単</th><th>映像</th></tr></thead>
+      ${rows.length ? `<div class="rp-tbl-wrap cr-wrap"><table class="rp-tbl mo-tbl cr-tbl"><thead><tr><th>日付</th><th>レース</th><th>枠</th><th>ST</th><th>3連単</th><th>決まり手</th><th>映像</th></tr></thead>
       <tbody>${list}</tbody></table></div>` : '<p class="empty">このコースで走ったレースはありません</p>'}
-      <p class="rp-def">決まり手は1着になった艇のもの（<b class="k-gain">青</b>＝自分の勝ち、<b class="k-lose">赤</b>＝負けたときの相手）。<span class="cr-kado">3角</span>＝レース映像で、3コースからダッシュに引いた（3カド）と確認したレース。</p></div>`;
+      <p class="rp-def">3連単は1着・2着・3着の艇番で、枠で囲んだのが自分の艇。決まり手は1着になった艇のもの（<b class="k-gain">青</b>＝自分の勝ち、<b class="k-lose">赤</b>＝負けたときの相手）。<span class="cr-kado">3角</span>＝レース映像で、3コースからダッシュに引いた（3カド）と確認したレース。</p></div>`;
   }
 
   function kimCard(s) {

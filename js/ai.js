@@ -91,57 +91,188 @@
   }
 
   // ---------- 穴予想（アナ姫） ----------
-  // 「人気の目安」＝コースと全国勝率だけで見た1着の確率（多くの人が見る数字）。
-  // AIの確率（モーター・展示タイム・STも入れたもの）が、人気の目安より1.2倍以上高く、10%以上ある艇を「穴」とみて、その艇の1着から5点。
-  // 該当がなければ「見送り」。過去のレースで試した成績は ABT。
-  const ANA = { minP: 0.10, ratio: 1.2 };
-  const ABT = { n: 513, cover: 205, hit: 14.1, roi: 109, avg: 3859 };
-  function ana(pr) {
+  // 機力や級だけでなく、選手の特徴から「展開」を読む穴予想。
+  //   1) 1コースの崩れやすさ：イン逃げ率と、負け方（差され・捲られ・捲られ差し）の割合（直近1年。SG・G1開催ならSG・G1だけ）
+  //      1コースの舟足（出足・伸び足）、2コースよりスタートが遅い、F持ち で増減
+  //   2) 攻める艇：2〜6コースの艇の、そのコースでの差し・捲り・捲り差しの割合を、
+  //      1コースの負け方と合わせ（捲られやすいイン×捲りの多い艇 など）、舟足（捲り＝伸び足、差し・捲り差し＝出足）と
+  //      コース別平均ST（内の艇より早いと捲りやすい。F持ちは遅く見る）で増減
+  //   3) 展開の恩恵：内の艇が捲りに行くと、その外の艇の捲り差しが届きやすい
+  //   この「展開の確率」を、侍のAIの確率に25%混ぜたものが「アナ姫の1着確率」。
+  //   人気の目安（コース別1着率と全国勝率だけ）より1.3倍以上高く、10%以上ある艇を穴とし、その艇の1着から5点。
+  const ANA = { minP: 0.10, ratio: 1.3, mix: 0.25 };
+  const ABT = { n: 945, cover: 243, hit: 11.1, roi: 99, avg: 4441, from: '2026/11/22', to: '2026/11/27' };
+  const shrink = (p, n, prior, k = 10) => (p * n + prior * k) / (n + k);
+
+  function scenario(pr, opt) {
+    const by = {};
+    pr.f.forEach((x) => { by[x.c] = x; });
+    const big = !!opt.big;
+    const kimOf = (x) => {
+      const k = x.s && x.s.kimt ? (x.s.kimt[big ? 'big' : 'all'] || {})['1y'] : null;
+      let r = k ? k[x.c - 1] : null;
+      if ((!r || !r[0]) && x.s && x.s.kimt) r = x.s.kimt.all['1y'][x.c - 1];
+      return r && r[0] ? r : null;
+    };
+    const avst = (x) => {
+      const a = x.s && x.s.c1y ? x.s.c1y[x.c - 1] : null;
+      return (a && a.st ? a.st : (x.b.st || 0.17)) + 0.02 * Math.min(x.b.f || 0, 2);
+    };
+    const ai = (x) => (opt.motorAi && opt.motorAi(x.b)) || { de: 3, nobi: 3, iki: 3 };
+    pr.f.forEach((x) => { x.ast = avst(x); x.ai = ai(x); x.kim = kimOf(x); });
+    const inn = by[1];
+    if (!inn) return null;
+    const ki = inn.kim, n1 = ki ? ki[0] : 0;
+    const raw = { esc: ki ? ki[1] : null, sasare: ki ? ki[2] : null, makurare: ki ? ki[3] : null, mksare: ki ? ki[4] : null, n: n1 };
+    let esc = shrink(ki ? ki[1] : 55, n1, 55), sasare = shrink(ki ? ki[2] : 14, n1, 14), makurare = shrink(ki ? ki[3] : 13, n1, 13), mksare = shrink(ki ? ki[4] : 8, n1, 8);
+    esc *= 1 + 0.08 * (inn.ai.de - 3) + 0.05 * (inn.ai.nobi - 3);
+    const late = by[2] ? Math.max(0, inn.ast - by[2].ast - 0.02) : 0;
+    esc *= 1 - 3 * late;
+    if ((inn.b.f || 0) >= 1) esc *= 0.93;
+    esc = Math.min(Math.max(esc, 15), 85) / 100;
+    const att = {};
+    for (let c = 2; c <= 6; c++) {
+      const x = by[c];
+      if (!x) continue;
+      const k = x.kim, n = k ? k[0] : 0;
+      let sashi = shrink(k ? k[2] : 0, n, [0, 0, 10, 4, 3, 2, 1][c]);
+      let mak = shrink(k ? k[3] : 0, n, [0, 0, 3, 6, 6, 3, 2][c]);
+      let mks = shrink(k ? k[4] : 0, n, [0, 0, 1, 4, 5, 4, 2][c]);
+      const gap = by[c - 1] ? by[c - 1].ast - x.ast : 0;
+      mak *= (1 + 0.25 * (x.ai.nobi - 3)) * (1 + 6 * Math.max(-0.1, Math.min(gap, 0.08))) * Math.pow(makurare / 13, 0.7);
+      sashi *= (1 + 0.15 * (x.ai.de - 3)) * Math.pow(sasare / 14, 0.7);
+      mks *= (1 + 0.2 * (x.ai.de - 3)) * Math.pow(mksare / 8, 0.7);
+      att[c] = { sashi, mak, mks, gap, boost: 0 };
+    }
+    for (let c = 4; c <= 6; c++) {
+      if (att[c] && att[c - 1]) { const bst = att[c - 1].mak / 15; att[c].mks *= 1 + bst; att[c].boost = bst; }
+    }
+    const tot = {};
+    Object.keys(att).forEach((c) => { tot[c] = att[c].sashi + att[c].mak + att[c].mks; });
+    const T = Object.values(tot).reduce((s, v) => s + v, 0) || 1;
+    const q = { 1: esc };
+    Object.keys(tot).forEach((c) => { q[c] = (1 - esc) * tot[c] / T; });
+    let sum = 0;
+    pr.f.forEach((x) => { x.sp = ANA.mix * (q[x.c] || 0) + (1 - ANA.mix) * x.p; sum += x.sp; });
+    pr.f.forEach((x) => { x.sp /= sum; x.att = att[x.c] || null; });
+    // 3連単（ハーヴィル式）
+    const tri = [];
+    pr.f.forEach((a) => pr.f.forEach((b) => pr.f.forEach((c) => {
+      if (a === b || b === c || a === c) return;
+      tri.push({ k: [a.b.lane, b.b.lane, c.b.lane], p: a.sp * (b.sp / (1 - a.sp)) * (c.sp / (1 - a.sp - b.sp)) });
+    })));
+    tri.sort((x, y) => y.p - x.p);
+    return { by, inn, esc, raw, tri };
+  }
+
+  function ana(pr, opt) {
     const z0 = pr.f.map((x) => x.parts.course + x.parts.nat);
     const e0 = z0.map((v) => Math.exp(v)), t0 = e0.reduce((s, v) => s + v, 0);
     pr.f.forEach((x, i) => { x.q = e0[i] / t0; });
-    const fav = pr.rank[0];
-    const cand = pr.f.filter((x) => x !== fav && x.p >= ANA.minP && x.p / x.q >= ANA.ratio);
-    if (!cand.length) return null;
-    const a = cand.reduce((m, x) => (x.p / x.q > m.p / m.q ? x : m));
-    const tri = pr.tri.filter((t) => t.k[0] === a.b.lane).slice(0, 5);
-    // 穴の理由：人気の目安に入っていない材料（モーター・展示タイム・ST）のうち、一番効いているもの
-    const why = [['mot', 'モーター'], ['ex', '展示タイム'], ['st', 'スタート']].filter(([k]) => a.parts[k] > 0.05)
-      .sort((x, y) => a.parts[y[0]] - a.parts[x[0]]);
-    return { a, tri, why, fav };
+    const sc = scenario(pr, opt);
+    if (!sc) return { sc: null, opt };
+    const fav = [...pr.f].sort((a, b) => b.sp - a.sp)[0];
+    const cand = pr.f.filter((x) => x !== fav && x.sp >= ANA.minP && x.sp / x.q >= ANA.ratio);
+    if (!cand.length) return { sc, fav, opt };
+    const a = cand.reduce((m, x) => (x.sp / x.q > m.sp / m.q ? x : m));
+    return { sc, fav, a, opt, tri: sc.tri.filter((t) => t.k[0] === a.b.lane).slice(0, 5) };
+  }
+
+  // 根拠（選手の特徴から読んだ展開）
+  function anaReasons(pr, x) {
+    const { sc, a } = x;
+    const out = [];
+    const nm = (y) => `${y.b.lane}号艇 ${esc(y.b.name)}`;
+    const p0 = (v) => (v == null ? '—' : `${Math.round(v)}%`);
+    const inn = sc.inn, r = sc.raw;
+    if (r.n) {
+      const lose = [['差され', r.sasare], ['捲られ', r.makurare], ['捲られ差し', r.mksare]].sort((p, q) => q[1] - p[1]);
+      out.push(['1コース', `${nm(inn)}のイン逃げ率 ${p0(r.esc)}（${r.n}走）。負け方は${lose[0][0]} ${p0(lose[0][1])}が一番多い`]);
+    } else out.push(['1コース', `${nm(inn)}は1コースのデータが少ない`]);
+    const flags = [];
+    if ((inn.b.f || 0) >= 1) flags.push(`F${inn.b.f}持ちでスタートは慎重になりやすい`);
+    if (inn.ai.de <= 2 || inn.ai.nobi <= 2) flags.push(`舟足は出足${inn.ai.de}・伸び足${inn.ai.nobi}と見劣り`);
+    if (pr.f.find((y) => y.c === 2) && inn.ast - pr.f.find((y) => y.c === 2).ast > 0.02) flags.push('2コースより平均STが遅い');
+    if (flags.length) out.push(['イン不安', flags.join('、')]);
+    // 隊形・調整（確率には入れず、読みの材料として出す。過去のレースで確率への効き目が確かめられないため）
+    const form = [];
+    const moved = pr.f.filter((y) => y.b.exCourse && y.b.exCourse !== y.b.lane);
+    if (moved.length) {
+      const mv = window.GALERT ? GALERT.moves(pr.f.map((y) => y.b)) : {};
+      const mae = moved.filter((y) => mv[y.b.lane] === 'mae').map((y) => `${y.b.lane}号艇が${y.b.exCourse}コースへ前づけ`);
+      const outs = moved.filter((y) => mv[y.b.lane] === 'out').map((y) => `${y.b.lane}号艇が${y.b.exCourse}コースに出た`);
+      form.push(`展示で進入が変化（${mae.concat(outs).join('・') || moved.map((y) => `${y.b.lane}号艇→${y.b.exCourse}コース`).join('・')}）`);
+    }
+    const c3 = pr.f.find((y) => y.c === 3);
+    if (x.opt.exKado && c3) form.push(`展示で3角：3コースの${nm(c3)}がダッシュに引き、スローは2艇だけ`);
+    else if (c3 && window.GTAG && GTAG.kadoCount(c3.b.no)) form.push(`3コースの${nm(c3)}は本番で3角にした歴あり（${GTAG.kadoCount(c3.b.no)}回）`);
+    const c2 = pr.f.find((y) => y.c === 2);
+    if (c2 && window.GTAG) { const m = GTAG.marks(c2.b.no, 2).find(([l]) => l === '握'); if (m) form.push(`2コースの${nm(c2)}は握る傾向（${m[1].replace(/^2コース握り率 /, '')}）。3・4コースの捲るすき間が狭くなる`); }
+    pr.f.filter((y) => y.b.tilt != null && y.b.tilt >= 1.5 && y.c < 6).forEach((y) => {
+      const out1 = pr.f.find((z) => z.c === y.c + 1);
+      form.push(`${nm(y)}はチルト+${y.b.tilt}で伸び型${out1 ? `。外の${out1.b.lane}号艇はこの艇をマークして捲り差しを狙える` : ''}`);
+    });
+    if (form.length) out.push(['隊形', form.join('／')]);
+    if (a) {
+      const t = a.att || {};
+      const way = [['差し', t.sashi || 0], ['捲り', t.mak || 0], ['捲り差し', t.mks || 0]].sort((p, q) => q[1] - p[1])[0][0];
+      const k = a.kim;
+      const rate = k ? { 差し: k[2], 捲り: k[3], 捲り差し: k[4] }[way] : null;
+      out.push(['攻め手', `${nm(a)}は${a.c}コースからの${way}が${rate != null ? ` ${p0(rate)}（${k[0]}走）` : '武器'}`]);
+      out.push(['舟足', `出足${a.ai.de}・行き足${a.ai.iki}・伸び足${a.ai.nobi}（モーターのAI評価）`]);
+      const st = [`${a.c}コースの平均ST .${String(Math.round(a.ast * 100)).padStart(2, '0')}`];
+      if (t.gap > 0.01) st.push(`内の艇より ${t.gap.toFixed(2)} 早い`);
+      if ((a.b.f || 0) >= 1) st.push(`F${a.b.f}持ち`);
+      out.push(['スタート', st.join('・')]);
+      if (t.boost > 0.15) {
+        const inner = pr.f.find((y) => y.c === a.c - 1);
+        out.push(['展開', `内の${nm(inner)}が捲りに行けば、その外から捲り差しが届く形`]);
+      }
+      out.push(['期待値', `アナ姫の1着確率 ${(a.sp * 100).toFixed(1)}% に対し、コースと勝率だけの人気の目安は ${(a.q * 100).toFixed(1)}%`]);
+    }
+    return out;
   }
 
   function anaTalk(pr, x) {
-    if (!x) return 'あら、今回は人気どおりの顔ぶれですわね。わたくしの眼鏡にかなう穴は見当たりませんの。今回は見送りですわ。';
-    const { a, why, fav } = x;
-    const best = (k, low) => [...pr.f].sort((p, q) => (low ? p[k] - q[k] : q[k] - p[k]))[0] === a;
-    const reason = why.map(([k, l]) => `${l}${(k === 'ex' || k === 'st') ? (best(k, true) ? '6艇で一番' : '良し') : (best(k) ? '6艇で一番' : '良し')}`).slice(0, 2).join('・');
-    const lines = [`見つけましたわ！ ${a.b.lane}号艇 ${esc(a.b.name)}（${a.c}コース）が、わたくしの選ぶ穴ですの。`];
-    if (reason) lines.push(`${reason}と材料はそろっていますのに、勝率とコースだけでは見過ごされそうですわ。`);
-    lines.push(`${fav.b.lane}号艇が崩れるなら、この艇の1着をお狙いあそばせ。`);
+    if (!x.sc) return 'あら、今回はデータが足りませんの。見送りですわ。';
+    const r = x.sc.raw;
+    const inn = x.sc.inn;
+    const lose = r.n ? [['差され', r.sasare], ['捲られ', r.makurare], ['捲られ差し', r.mksare]].sort((p, q) => q[1] - p[1])[0][0] : null;
+    if (!x.a) return `${inn.b.lane}号艇 ${esc(inn.b.name)}のイン戦は${Math.round(x.sc.esc * 100)}%ほどと見ますわ。崩れる筋も人気どおりで、わたくしの眼鏡にかなう穴は見当たりませんの。今回は見送りですわ。`;
+    const a = x.a, t = a.att || {};
+    const way = [['差し', t.sashi || 0], ['捲り', t.mak || 0], ['捲り差し', t.mks || 0]].sort((p, q) => q[1] - p[1])[0][0];
+    const lines = [`見つけましたわ！ ${a.b.lane}号艇 ${esc(a.b.name)}（${a.c}コース）の${way}ですの。`];
+    if (lose) lines.push(`1号艇 ${esc(inn.b.name)}は${lose}負けが目立ちますから、${way === '差し' || way === '捲り差し' ? '内が空く' : '外から叩かれる'}形がありますわ。`);
+    if (t.boost > 0.15) lines.push(`内の艇が捲りに行けば、その外から捲り差しがきれいに決まりますわよ。`);
+    else if (way === '捲り' && t.gap > 0.01) lines.push('スタートで内より前に出られる分、伸びで押し切れますわ。');
+    lines.push('級や勝率だけでは見過ごされそうな一撃、お狙いあそばせ。');
     if (!pr.hasEx) lines.push('まだ展示前ですから、展示のあとにもう一度見て差し上げますわ。');
     return lines.join('');
   }
 
-  function anaCard(boats, courseOf, result) {
+  // opt: { big: SG・G1開催か, motorAi: (b) => {de, iki, nobi}, exKado: 展示で3角だったか }
+  function anaCard(boats, courseOf, result, opt = {}) {
     if (boats.length < 6) return '';
     const pr = predict(boats, courseOf);
-    const x = ana(pr);
+    const x = ana(pr, opt);
     const hitKey = result && result.order ? result.order.join('-') : null;
-    const tri = x ? x.tri.map((t, i) => `<li class="${hitKey === t.k.join('-') ? 'is-hit' : ''}"><small>${i + 1}</small>${t.k.map((l) => `<span class="ln ln-${l}">${l}</span>`).join('<i>-</i>')}<b>${(t.p * 100).toFixed(1)}%</b>${hitKey === t.k.join('-') ? '<em>的中</em>' : ''}</li>`).join('') : '';
-    const res = x && hitKey ? `<p class="ai-res">結果 ${hitKey}：${x.tri.some((t) => t.k.join('-') === hitKey) ? '<b class="is-hit">穴的中！</b>' : result.order[0] === x.a.b.lane ? '<b>穴の艇が1着</b>（3連単は外れ）' : '外れ'}</p>` : '';
-    const body = x ? `<div class="ai-grid">
+    const tri = x.a ? x.tri.map((t, i) => `<li class="${hitKey === t.k.join('-') ? 'is-hit' : ''}"><small>${i + 1}</small>${t.k.map((l) => `<span class="ln ln-${l}">${l}</span>`).join('<i>-</i>')}<b>${(t.p * 100).toFixed(1)}%</b>${hitKey === t.k.join('-') ? '<em>的中</em>' : ''}</li>`).join('') : '';
+    const res = x.a && hitKey ? `<p class="ai-res">結果 ${hitKey}：${x.tri.some((t) => t.k.join('-') === hitKey) ? '<b class="is-hit">穴的中！</b>' : result.order[0] === x.a.b.lane ? '<b>穴の艇が1着</b>（3連単は外れ）' : '外れ'}</p>` : '';
+    const reasons = x.sc ? anaReasons(pr, x) : [];
+    const why = reasons.length ? `<dl class="ana-why">${reasons.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl>` : '';
+    const body = x.a ? `<div class="ai-grid">
         <div><h5 class="rp-sub">穴の艇</h5><div class="ana-pick"><span class="ln ln-${x.a.b.lane}">${x.a.b.lane}</span>
           <div><b>${esc(x.a.b.name)}</b><small>${x.a.c}コース</small></div>
-          <dl><div><dt>AIの1着確率</dt><dd>${(x.a.p * 100).toFixed(1)}%</dd></div><div><dt>人気の目安</dt><dd>${(x.a.q * 100).toFixed(1)}%</dd></div><div><dt>差</dt><dd class="is-up">${(x.a.p / x.a.q).toFixed(1)}倍</dd></div></dl></div></div>
+          <dl><div><dt>アナ姫の1着確率</dt><dd>${(x.a.sp * 100).toFixed(1)}%</dd></div><div><dt>人気の目安</dt><dd>${(x.a.q * 100).toFixed(1)}%</dd></div><div><dt>差</dt><dd class="is-up">${(x.a.sp / x.a.q).toFixed(1)}倍</dd></div></dl></div>
+          <h5 class="rp-sub">展開の読み</h5>${why}</div>
         <div><h5 class="rp-sub">3連単 穴5点 <small>${x.a.b.lane}号艇の1着から</small></h5><ol class="ai-tri">${tri}</ol>${res}</div>
-      </div>` : '';
+      </div>` : (why ? `<h5 class="rp-sub">展開の読み</h5>${why}` : '');
     return `<div class="card ai ai--ana">
-      <h4 class="card__h">穴予想 <small>アナ姫が穴を見つけて差し上げますわ</small><span class="ai-conf ${x ? 'is-ana' : 'is-futsu'}">${x ? '穴あり' : '見送り'}</span></h4>
+      <h4 class="card__h">穴予想 <small>アナ姫が展開から穴を見つけて差し上げますわ</small><span class="ai-conf ${x.a ? 'is-ana' : 'is-futsu'}">${x.a ? '穴あり' : '見送り'}</span></h4>
       <div class="ai-head"><img class="ai-sam" src="img/anahime.svg?v=1" alt="アナ姫" width="96" height="96">
         <div class="ai-say"><b>アナ姫</b><p>${anaTalk(pr, x)}</p></div></div>
       ${body}
-      <p class="rp-def">「人気の目安」はコース別1着率と全国勝率だけで見た1着の確率、「AIの1着確率」はそこにモーター・展示タイム・平均STを足したものです。AIの確率が人気の目安より${ANA.ratio}倍以上高く、${ANA.minP * 100}%以上ある艇を「穴」とします（オッズは見ていません）。過去${ABT.n}レースで試した成績：穴ありと出たのは${ABT.cover}レース、穴5点の的中 ${ABT.hit}%、平均配当 ${ABT.avg.toLocaleString()}円、5点ずつ買った場合の回収率 ${ABT.roi}%。試したレースが少ないので、数字は大きくぶれます。当たりを約束するものではありません。舟券は20歳になってから、ご自身の判断で。</p>
+      <p class="rp-def">機力や級だけでなく、選手の特徴から展開を読みます：1コースのイン逃げ率と負け方（差され・捲られ・捲られ差し）、2〜6コースの艇のそのコースでの決まり手、モーターの出足・伸び足（AI評価）、コース別の平均ST（F持ちは遅めに見る）、内の艇が捲ったときの外の捲り差し。展示の進入・3角・2コースの握り・チルトは「隊形」として読みに書きます（確率への効き目がまだ確かめられないため、確率には入れていません）。これを侍のAI予想に25%混ぜて「アナ姫の1着確率」とし、コースと全国勝率だけで見た「人気の目安」より${ANA.ratio}倍以上高く、${ANA.minP * 100}%以上ある艇を穴にします（オッズは見ていません）。過去${ABT.n}レース（${ABT.from}〜${ABT.to}）で試した成績：穴ありは${ABT.cover}レース、穴5点の的中 ${ABT.hit}%、平均配当 ${ABT.avg.toLocaleString()}円、5点ずつ買った場合の回収率 ${ABT.roi}%。数字は大きくぶれます。当たりを約束するものではありません。舟券は20歳になってから、ご自身の判断で。</p>
     </div>`;
   }
 

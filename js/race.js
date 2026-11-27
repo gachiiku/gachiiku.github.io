@@ -469,7 +469,7 @@ window.WAKE_READY.then((first) => {
 
     const hasStats = boats.some((x) => x.s);
     return table + result + exinCard(r) + '<!--AD-->' + cond + data2 + commentCard(v, r)
-      + (window.GAI && !(r.result && r.result.canceled) ? GAI.card(boats, inC, r.result) + GAI.anaCard(boats, inC, r.result) : '')
+      + (window.GAI && !(r.result && r.result.canceled) ? GAI.card(boats, inC, r.result) + GAI.anaCard(boats, inC, r.result, { big: v.grade === 'SG' || v.grade === 'G1', motorAi: (b) => aiOf(v.id, b.motorNo), exKado: !!r.exKado }) : '')
       + `<p class="rc-note">赤字はそのレースの6艇で一番良い数字。選手名の下のマーク：<b>展示前</b>＝スタート展示で前づけした、<b>展示3角</b>＝スタート展示で3コースからダッシュに引いた、<b>進入変化</b>＝スタート展示でコースが変わったが前づけではない（新人が大外に出て、ずれた など）、<b>3角歴</b>＝3コースに入りそうで、過去に本番で3角をしたことがある（展示がスローでも本番で引くことがある）、<b>前</b>＝前づけしやすい（2〜6枠で枠より内に入る割合15%以上）、<b>チルト3</b>＝チルト+3度、<b>握</b>＝2コースに入りそうで2コース握り率50%以上、<b>3角</b>＝3コースに入りそうでダッシュに引く率（3カド率）40%以上、<b>変全</b>＝3コースに入りそうで変わり全速率50%以上（握・3角・変全は映像タグ・直近1年。入りそうなコースはその枠から一番多く入ったコース）。マークを押すと数字が出ます。<b>チルト3</b>は江戸川では出しません（チルトを上げるのが普通のため）。コース別データ・勝ち筋・負け筋は、枠番どおりのコース（スタート展示で進入が変わったら展示のコース）の成績です。SG・G1開催では勝ち筋・負け筋をSG・G1のレースだけで数えます${hasStats ? `（集計 ${boats.find((x) => x.s).s.histSpan.map((d) => `${d.slice(0, 4)}/${+d.slice(4, 6)}/${+d.slice(6)}`).join('〜')}）` : ''}。</p>`;
   }
 

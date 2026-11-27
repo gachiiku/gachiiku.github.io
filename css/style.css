@@ -1244,3 +1244,9 @@ a.en__who:hover b { color: var(--navy); text-decoration: underline; }
 .mnum[data-tip] { cursor: pointer; }
 .rc-auto { display: block; margin-top: 6px; padding: 6px 10px; border-radius: 6px; background: #fff6d6; color: var(--tx-1, #222); font-size: 12.5px; }
 .rc-auto a { margin-left: 6px; font-weight: 700; }
+/* アナ姫：展開の読み */
+.ana-why { margin: 0; display: grid; gap: 6px; }
+.ana-why > div { display: grid; grid-template-columns: 5.5em 1fr; gap: 8px; font-size: 13px; line-height: 1.55; padding: 6px 0; border-bottom: 1px dashed var(--line); }
+.ana-why dt { color: #c2407a; font-weight: 700; white-space: nowrap; }
+.ana-why dd { margin: 0; }
+.ai--ana .ana-pick + .rp-sub { margin-top: 14px; }
